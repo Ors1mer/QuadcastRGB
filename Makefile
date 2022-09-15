@@ -6,17 +6,33 @@ LIBS = -lusb-1.0
 SRCMODULES = modules/argparser.c modules/devio.c modules/rgbmodes.c
 OBJMODULES = $(SRCMODULES:.c=.o)
 
-BINNAME = quadcastrgb
-MANPATH = unix/quadcastrgb.1
+BINPATH = ./quadcastrgb
+DEVBINPATH = ./dev
+MANPATH = nix/quadcastrgb.1
+
+BINDIR_INS = $${HOME}/.local/bin/
+MANDIR_INS = $${HOME}/.local/share/man/man1/
 
 quadcastrgb: main.c $(OBJMODULES)
-	$(CC) $(CFLAGS_DEV) $^ $(LIBS) -o $@
+	$(CC) $(CFLAGS_INS) $^ $(LIBS) -o $(BINPATH)
 
-install: $(OBJMODULES)
-	$(CC) $(CFLAGS_INS) $^ $(LIBS) -o $(BINNAME)
+dev: main.c $(OBJMODULES)
+	$(CC) $(CFLAGS_DEV) $^ $(LIBS) -o $(DEVBINPATH)
 
+install: quadcastrgb $(MANPATH).gz $(BINDIR_INS) $(MANDIR_INS)
+	cp $(BINPATH) $(BINDIR_INS)
+	cp $(MANPATH).gz $(MANDIR_INS)
+
+# For directories
+$${HOME}/%/:
+	mkdir -p $@
+# For modules
 %.o: %.c %.h
 	$(CC) $(CFLAGS_DEV) -c $< -o $@
+
+man: nix/manpage.md
+	pandoc $< -s -t man -o $(MANPATH)
+	gzip $(MANPATH)
 
 ifneq (clean, $(MAKECMDGOALS))
 -include deps.mk
@@ -25,20 +41,12 @@ endif
 deps.mk: $(SRCMODULES)
 	$(CC) -MM $^ > $@
 
-man: linux/manpage.md
-	pandoc $< -s -t man -o $(MANPATH)
-	gzip $(MANPATH)
-
-usbtest: usbtest.c
-	$(CC) $(CFLAGS_DEV) $^ $(LIBS) -o $@
-
 .SILENT:
-
 clean:
-	rm -f $(OBJMODULES) $(BINNAME) tags linux/quadcastrgb.1*
+	rm -f $(OBJMODULES) $(BINPATH) $(DEVBINPATH) tags
 
 run: quadcastrgb
-	./$(BINNAME)
+	$(BINPATH)
 
 tags:
-	ctags *.c modules/*.c modules/*.h
+	ctags *.c $(SRCMODULES)
