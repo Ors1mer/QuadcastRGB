@@ -68,20 +68,20 @@ lightning for the lower
 : Success
 
 **1**
-: Some argument error (i. e. typo or a wrong argument specified).
+: Some argument error (i. e. typo or a wrong argument specified)
 
 **2**
-: A libusb function error (probably due to failed memory allocation).
+: A libusb function error (probably due to failed memory allocation)
 
 **3**
-: The microphone isn't connected.
+: The microphone isn't connected
 
 **4**
 : Failed to open the microphone descriptor. Consider running the program with
-the root privileges (not recommended) or creating a dev rule (recommended).
+the root privileges (not recommended) or creating a dev rule (recommended)
 
 **5**
-: Failed to transfer some packets.
+: Failed to transfer some packets
 
 # CAVEATS
 It isn't possible to edit only one (upper or lower) diode group without
