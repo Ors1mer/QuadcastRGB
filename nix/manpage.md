@@ -24,34 +24,34 @@ Available modes:
 # OPTIONS
 ## General options
 **-h**, **--help**
-: Display help message and version, then exit.
+: Display help message and version, then exit
 
 **-v**, **--verbose**
-: Explain what is being done.
+: Explain what is being done
 
 ## Light diode groups
 **-a**, **--all**
 : Apply the following options for both upper & lower diodes.
-This is the default state, it may be omitted.
+This is the default state, it may be omitted
 
 **-u**, **--upper**
-: Apply the following options to the upper diode only.
+: Apply the following options to the upper diode only
 
 **-l**, **--lower**
-: Apply the following options to the lower diodes only.
+: Apply the following options to the lower diodes only
 
 ## Additional parameters
 **-b**
 : (Not supported.) Set the brightness in percents 0 through 100 (100 by default)
-for the specified mode.
+for the specified mode
 
 **-s**
 : (Not supported.) Set speed of a gradient/animation, integer 1-10 (5 by
-default). Does nothing in solid mode.
+default). Does nothing in solid mode
 
 # EXAMPLES
 **quadcastrgb solid**
-: Set default solid color (#ff0000) for the whole micro
+: Set default solid color (#f20000) for the whole micro
 
 **quadcastrgb -a cycle**
 : Set default cycle (rainbow) mode for the whole micro
