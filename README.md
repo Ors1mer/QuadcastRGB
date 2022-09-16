@@ -32,17 +32,25 @@ quadcastrgb -u -b 50 cycle -l lightning ff6000 # set default cycle mode for the 
 ### Compiling from source
 If you are lucky, this should be enough:
 ```bash
-make && make install # for linux
-gmake && gmake install # for freebsd
+make install  # for linux
+gmake install # for freebsd
 ```
-Otherwise check the dependencies:  
- - gcc v12.2.0
+## Basic problems during&after Install
+### Problem 1: make failed
+Check the dependencies:  
+ - gcc v12.2.0 OR clang v14.0.6 (most versions should do fine)
  - libusb-1.0 v1.0.26
 
-If an error occurs when running the compiled binary, check the error code. If
-it is 4, try running the program under superuser privileges. If that was the
-problem, you should eventually create a dev rule for the microphone to allow
-certain users access to it.
+### Problem 2: command not found
+Check the $PATH and manpath. The program follows XDG specifications, so the
+binary is stored in $HOME/.local/bin (should be in $PATH) and the man is in
+$HOME/.local/share/man (should be in $MANPATH). It is possible to move them,
+of course.
+
+### Problem 3: couldn't open the microphone
+Check the error code. If it is 4, try running the program under superuser
+privileges. If that was the problem, you should eventually create a dev rule
+for the microphone to allow certain users access to it.
 
 ### How to create the udev rule
 ```bash

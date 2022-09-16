@@ -1,4 +1,3 @@
-CC = gcc
 CFLAGS_DEV = -g -Wall
 CFLAGS_INS = -s -O2
 
