@@ -48,9 +48,10 @@ struct colschemes *parse_arg(int argc, const char **argv, int *verbose)
     const char **arg_p;
     int cs_state = all;
 
-    /* Set default brightness and speed */
+    /* Set defaults */
     cs->upper.br = cs->lower.br = MAX_BR_SPD;
     cs->upper.spd = cs->lower.spd = MAX_BR_SPD;
+    cs->upper.mode = cs->lower.mode = NULL;
 
     for(arg_p = argv+1; arg_p < argv+argc; arg_p++)
         set_arg(&arg_p, argv+argc-1, cs, &cs_state, verbose);
