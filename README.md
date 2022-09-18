@@ -32,14 +32,15 @@ quadcastrgb -u -b 50 cycle -l lightning ff6000 # set default cycle mode for the 
 ### Compiling from source
 If you are lucky, this should be enough:
 ```bash
-make install  # for linux
-gmake install # for freebsd
+make install # for linux
+gmake install OS=freebsd # for freebsd
 ```
 ## Basic problems during&after Install
 ### Problem 1: make failed
 Check the dependencies:  
  - gcc v12.2.0 OR clang v14.0.6 (most versions should do fine)
  - libusb-1.0 v1.0.26
+ - gettext v0.21-2
 
 ### Problem 2: command not found
 Check the $PATH and manpath. The program follows XDG specifications, so the
@@ -54,8 +55,8 @@ for the microphone to allow certain users access to it.
 
 ### How to create the udev rule
 ```bash
- cd /etc/udev/rules.d # here the rules are stored
- vi 10-quadcast-perm.rules # ...with superuser privileges
+cd /etc/udev/rules.d # here the rules are stored
+ vi 10-quadcast-perm.rules # ...under superuser
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="0951", ATTRS{idProduct}=="171f", MODE="0660", GROUP="hyperrgb" # write this line, save & exit (:wq)
 ```
 Now the microphone is accessible for the group "hyperrgb". Add your user to the
