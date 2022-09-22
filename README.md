@@ -6,7 +6,7 @@ platforms, Unix-like preferably. Only Linux and partially FreeBSD were tested
 so far.
 
 ### Features:
-- *open source (GPLv3)*
+- *free software (GPLv3)*
 - *cross-platform*
 - *cli*
 - *no need to run in the background*
