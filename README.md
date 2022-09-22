@@ -12,10 +12,10 @@ so far.
 - *no need to run in the background*
 
 ### Things yet to be done:
-- *all modes except **solid***
-- *brightness & speed*
+- *the modes: ~solid,~ blink, cycle, lightning, wave*
+- *~brightness &~ speed*
 - *delay - **blink**-specific option*
-- *actual installation*
+- *~actual installation~*
 - *save the previous settings*
 
 ### Examples:
@@ -55,9 +55,12 @@ for the microphone to allow certain users access to it.
 
 ### How to create the udev rule
 ```bash
-cd /etc/udev/rules.d # here the rules are stored
- vi 10-quadcast-perm.rules # ...under superuser
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="0951", ATTRS{idProduct}=="171f", MODE="0660", GROUP="hyperrgb" # write this line, save & exit (:wq)
+# Here the rules are stored:
+cd /etc/udev/rules.d 
+# Do under superuser:
+vi 10-quadcast-perm.rules 
+# Write this line, save & exit (:wq):
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="0951", ATTRS{idProduct}=="171f", MODE="0660", GROUP="hyperrgb" 
 ```
 Now the microphone is accessible for the group "hyperrgb". Add your user to the
 group and it's done.
