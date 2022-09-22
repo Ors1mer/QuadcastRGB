@@ -42,12 +42,12 @@ This is the default state, it may be omitted
 
 ## Additional parameters
 **-b**
-: (Not supported.) Set the brightness in percents 0 through 100 (100 by default)
-for the specified mode
+: Set the brightness in percents 0 through 100 (100 by default) for the
+specified mode
 
 **-s**
-: (Not supported.) Set speed of a gradient/animation, integer 1-10 (5 by
-default). Does nothing in solid mode
+: Set speed of a gradient/animation, integer 1-10 (5 by
+default). Ignored in solid mode
 
 # EXAMPLES
 **quadcastrgb solid**

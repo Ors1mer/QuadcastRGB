@@ -3,8 +3,8 @@
 static int biggest_data(struct colschemes *cs);
 static int count_data(const struct colscheme *colsch);
 static void fill_data(const struct colscheme *colsch, byte_t *da);
-static void sequence_solid(const int *colors, byte_t *da);
-static void write_hexcolor(int color, byte_t *mem);
+static void sequence_solid(const int *colors, int bright, byte_t *da);
+static void write_hexcolor(int color, int bright, byte_t *mem);
 
 datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt)
 {
@@ -43,23 +43,23 @@ static int count_data(const struct colscheme *colsch)
 static void fill_data(const struct colscheme *colsch, byte_t *da)
 {
     if(strequ(colsch->mode, "solid")) {
-        sequence_solid(colsch->colors, da);
+        sequence_solid(colsch->colors, colsch->br, da);
     } else {
         fprintf(stderr, NOSUPPORT_MSG);
     }
 }
 
-static void sequence_solid(const int *colors, byte_t *da)
+static void sequence_solid(const int *colors, int bright, byte_t *da)
 {
     *da = RGB_CODE; /* write code to the first byte */
-    write_hexcolor(*colors, da+1); /* write RGB */
+    write_hexcolor(*colors, bright, da+1); /* write RGB */
 }
 
-static void write_hexcolor(int color, byte_t *mem)
+static void write_hexcolor(int color, int bright, byte_t *mem)
 {
     int n;
     for(n = 16; n >= 0; n -= 8) {
-        *mem = (byte_t)((color >> n) & 0xff);
+        *mem = (byte_t)( (((color >> n) & 0xff)*bright) / 100 );
         mem++;
     }
 }
