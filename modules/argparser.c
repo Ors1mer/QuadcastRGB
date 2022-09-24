@@ -50,8 +50,8 @@ struct colschemes *parse_arg(int argc, const char **argv, int *verbose)
 
     /* Set defaults */
     cs->upper.br = cs->lower.br = MAX_BR_SPD_DLY;
-    cs->upper.spd = cs->lower.spd = MAX_BR_SPD_DLY;
-    cs->upper.dly = cs->lower.dly = 10;
+    cs->upper.spd = cs->lower.spd = SPD_DEFAULT;
+    cs->upper.dly = cs->lower.dly = DLY_DEFAULT;
     cs->upper.mode = cs->lower.mode = NULL;
 
     for(arg_p = argv+1; arg_p < argv+argc; arg_p++)

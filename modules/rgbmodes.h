@@ -6,9 +6,13 @@
 #define RGBMODES_SENTRY
 
 #include <stdio.h> /* for fprintf */
-#include "argparser.h" /* for struct colschemes, strequ */
+#include "argparser.h" /* for struct colschemes, strequ, nocolor */
 
 /* Constants */
+#define MAX_PCT_COUNT 90
+#define COLPAIR_PER_PCT 8
+#define MAX_COLPAIR_COUNT COLPAIR_PER_PCT*MAX_PCT_COUNT
+
 #define DATA_PACKET_SIZE 64
 #define RGB_CODE 0x81
 

@@ -17,6 +17,8 @@
 #define MODES_CNT 5
 #define RAINBOW_CNT 9
 #define MAX_BR_SPD_DLY 100
+#define SPD_DEFAULT 50
+#define DLY_DEFAULT 10
 
 enum hexcolors {
     red = 0xf20000,
