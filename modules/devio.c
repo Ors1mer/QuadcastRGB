@@ -25,12 +25,25 @@ static int is_micro(libusb_device *dev);
 static int send_header(libusb_device_handle *handle,
                        byte_t op_code, short size);
 static int send_footer(libusb_device_handle *handle);
+static void send_empty(libusb_device_handle *handle);
+static int send_startup_end_packet(libusb_device_handle *handle);
 static int send_data(libusb_device_handle *handle,
                      datpack *data_arr, int pck_cnt);
 static int send_size(libusb_device_handle *handle,
                      datpack *data_arr, int pck_cnt);
-static void send_empty(libusb_device_handle *handle);
 static short count_color_pairs(datpack *data_arr, int pck_cnt);
+
+static void print_packet(byte_t *pck, char *str)
+{
+    byte_t *p;
+    puts(str);
+    for(p = pck; p < pck+PACKET_SIZE; p++) {
+        printf("%02X ", (int)(*p));
+        if((p-pck+1) % 16 == 0)
+            puts("");
+    }
+    puts("");
+}
 
 libusb_device_handle *open_micro(datpack *data_arr)
 { 
@@ -57,6 +70,7 @@ libusb_device_handle *open_micro(datpack *data_arr)
         FREE_AND_EXIT();
     }
     libusb_free_device_list(devs, 1);
+    libusb_set_auto_detach_kernel_driver(handle, 1); /* no support possible */
     return handle;
 }
 
@@ -80,10 +94,35 @@ static int is_micro(libusb_device *dev)
     return 0;
 }
 
+void send_startup_packets(libusb_device_handle *handle, datpack *data_arr,
+                          int pck_cnt)
+{
+    short errcode;
+    int i = 0;
+
+    errcode = send_header(handle, STARTUP_HEADER1, 1);
+    HANDLE_TRANSFER_ERR(errcode);
+    send_empty(handle);
+
+    for(; i < 2; i++) {
+        errcode = send_header(handle, STARTUP_HEADER2, 1);
+        HANDLE_TRANSFER_ERR(errcode);
+        send_empty(handle);
+    }
+
+    errcode = send_header(handle, STARTUP_HEADER3, 1);
+    HANDLE_TRANSFER_ERR(errcode);
+    errcode = send_startup_end_packet(handle);
+    HANDLE_TRANSFER_ERR(errcode);
+
+    errcode = send_footer(handle);
+    HANDLE_TRANSFER_ERR(errcode);
+    send_empty(handle);
+}
+
 void send_packets(libusb_device_handle *handle, datpack *data_arr, int pck_cnt)
 {
     short errcode;
-    libusb_set_auto_detach_kernel_driver(handle, 1); /* no support possible */
 
     errcode = send_header(handle, DATA_HEADER, pck_cnt);
     HANDLE_TRANSFER_ERR(errcode);
@@ -107,7 +146,7 @@ static int send_header(libusb_device_handle *handle,
     ssize_t sent;
     packet = calloc(PACKET_SIZE, 1);
     /* Operation codes */
-    *packet = 0x04; /* the header code */
+    *packet = HEADER_CODE; /* the header code */
     *(packet+1) = op_code; 
     /* Size parameter */
     *(packet+8) = size;
@@ -116,6 +155,7 @@ static int send_header(libusb_device_handle *handle,
     sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
                                    WVALUE, WINDEX, packet, PACKET_SIZE,
                                    TIMEOUT);
+    print_packet(packet, "Header:");
     free(packet);
     if(sent != PACKET_SIZE) {
         fprintf(stderr, HEADER_ERR_MSG, libusb_strerror(sent));
@@ -137,6 +177,7 @@ static int send_footer(libusb_device_handle *handle)
     sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
                                    WVALUE, WINDEX, packet, PACKET_SIZE,
                                    TIMEOUT);
+    print_packet(packet, "Footer:");
     free(packet);
     if(sent != PACKET_SIZE) {
         fprintf(stderr, FOOTER_ERR_MSG, libusb_strerror(sent));
@@ -152,6 +193,7 @@ static void send_empty(libusb_device_handle *handle)
     packet = calloc(PACKET_SIZE, 1);
     libusb_control_transfer(handle, BMREQUEST_TYPE_IN, BREQUEST_IN, WVALUE,
                             WINDEX, packet, PACKET_SIZE, TIMEOUT);
+    print_packet(packet, "Empty:");
     free(packet);
 }
 
@@ -164,6 +206,7 @@ static int send_data(libusb_device_handle *handle,
         sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT,
                                        BREQUEST_OUT, WVALUE, WINDEX,
                                        *packet, PACKET_SIZE, TIMEOUT);
+        print_packet(*packet, "Data:");
         if(sent != PACKET_SIZE) {
             fprintf(stderr, DATAPCK_ERR_MSG, libusb_strerror(sent));
             return sent;
@@ -191,11 +234,34 @@ static int send_size(libusb_device_handle *handle,
     sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
                                    WVALUE, WINDEX, packet, PACKET_SIZE,
                                    TIMEOUT);
+    print_packet(packet, "Size:");
     free(packet);
     if(sent != PACKET_SIZE) {
         fprintf(stderr, SIZEPCK_ERR_MSG, libusb_strerror(sent));
         return sent;
     }
+    return 0;
+}
+
+static int send_startup_end_packet(libusb_device_handle *handle)
+{
+    byte_t *packet;
+    short sent;
+    packet = calloc(PACKET_SIZE, 1);
+    /* Codes */
+    *(packet+12) = 0xff;
+    *(packet+PACKET_SIZE-2) = 0xaa;
+    *(packet+PACKET_SIZE-1) = 0x55;
+    sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
+                                   WVALUE, WINDEX, packet, PACKET_SIZE,
+                                   TIMEOUT);
+    print_packet(packet, "Endpacket:");
+    free(packet);
+    if(sent != PACKET_SIZE) {
+        fprintf(stderr, SIZEPCK_ERR_MSG, libusb_strerror(sent));
+        return sent;
+    }
+
     return 0;
 }
 

@@ -46,6 +46,7 @@ int main(int argc, const char **argv)
     handle = open_micro(data_arr); /* data_arr for freeing memory */
     /* Send packets */
     VERBOSE_PRINT(verbose, VERBOSE4_PKT);
+    send_startup_packets(handle, data_arr, data_packet_cnt);
     send_packets(handle, data_arr, data_packet_cnt);
     free(data_arr);
     libusb_close(handle);

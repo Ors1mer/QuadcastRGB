@@ -17,8 +17,14 @@
 #define DEV_EPIN 0x80 /* contorl endpoint IN */
 /* Packet info */
 #define PACKET_SIZE 64 /* bytes */
+
+#define HEADER_CODE 0x04
+#define STARTUP_HEADER1 0x58
+#define STARTUP_HEADER2 0x56
+#define STARTUP_HEADER3 0x57
 #define DATA_HEADER 0x53
 #define SIZE_HEADER 0x23
+
 
 #define TIMEOUT 1000 /* one second per packet */
 #define BMREQUEST_TYPE_OUT 0x21
@@ -31,7 +37,8 @@
 #define DEVLIST_ERR_MSG _("Couldn't get the list of USB devices.\n")
 #define NODEV_ERR_MSG _("HyperX Quadcast S isn't connected.\n")
 #define OPEN_ERR_MSG _("Couldn't open the microphone.\n")
-#define TRANSFER_ERR_MSG _("Couldn't transfer a packet!\n")
+#define TRANSFER_ERR_MSG _("Couldn't transfer a packet! " \
+                           "The device might be busy.\n")
 #define FOOTER_ERR_MSG _("Footer packet error: %s\n")
 #define HEADER_ERR_MSG _("Header packet error: %s\n")
 #define SIZEPCK_ERR_MSG _("Size packet error: %s\n")
@@ -46,6 +53,8 @@ enum {
 
 /* Functions */
 libusb_device_handle *open_micro(datpack *data_arr);
+void send_startup_packets(libusb_device_handle *handle,
+                          datpack *data_arr, int pck_cnt);
 void send_packets(libusb_device_handle *handle,
                   datpack *data_arr, int pck_cnt);
 
