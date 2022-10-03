@@ -14,7 +14,7 @@ so far.
 ### Things yet to be done:
 - *the modes: ~solid,~ blink, cycle, lightning, wave*
 - *~brightness &~ speed*
-- *delay - **blink**-specific option*
+- *~delay - **blink**-specific option~*
 - *~actual installation~*
 - *save the previous settings*
 
