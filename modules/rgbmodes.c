@@ -1,12 +1,23 @@
 #include "rgbmodes.h"
 
+static void print_datpack(datpack *da, int pck_cnt);
+
 static int biggest_data(struct colschemes *cs);
 static int count_data(const struct colscheme *colsch);
-static void fill_data(const struct colscheme *colsch, byte_t *da);
+static int count_blink_data(const struct colscheme *colsch);
+static void fill_data(const struct colscheme *colsch, byte_t *da, int pckcnt);
+
+/* Solid */
 static void sequence_solid(const int *colors, int bright, byte_t *da);
+
+
+/* Blink */
 static void sequence_blink_random(int bright, int speed,
                                   int delay, byte_t *da);
-static void sequence_blink(const struct colscheme *colsch, byte_t *da);
+static void sequence_blink(const struct colscheme *colsch, byte_t *da,
+                           int pckcnt);
+static void blink_color_fill(int color, int size, int bright, byte_t *da);
+
 
 static void write_hexcolor(int color, int bright, byte_t *mem);
 
@@ -15,11 +26,32 @@ datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt)
     datpack *data_arr;
     *pck_cnt = biggest_data(cs);
     data_arr = calloc(sizeof(datpack), *pck_cnt);
+    /*DEBUGPRINT*/
+    printf("Packets to be sent: %d\n", *pck_cnt);
 
-    fill_data(&cs->upper, *data_arr);
-    fill_data(&cs->lower, *data_arr+4);
+    fill_data(&cs->upper, *data_arr, *pck_cnt);
+    fill_data(&cs->lower, *data_arr+BYTE_STEP, *pck_cnt);
+
+    /*DEBUGPRINT*/
+    print_datpack(data_arr, *pck_cnt);
 
     return data_arr;
+}
+
+static void print_datpack(datpack *da, int pck_cnt)
+{
+    int i, j;
+    for(j = 0; j < pck_cnt; j++) {
+        printf("Packet %d:\n", j+1);
+        for(i = 0; i < DATA_PACKET_SIZE; i++) {
+            printf("%02X ", (unsigned int)da[j][i]);
+            if((i+1) % 4 == 0)
+                printf("\t");
+            if((i+1) % 8 == 0)
+                puts("");
+        }
+        puts("");
+    }
 }
 
 static int biggest_data(struct colschemes *cs)
@@ -40,27 +72,38 @@ static int count_data(const struct colscheme *colsch)
     if(strequ(colsch->mode, "solid")) {
         return 1;
     } else if(strequ(colsch->mode, "blink")) {
-        int cnt = 0;
-        const int *col;
-        if(colsch->colors[0] == nocolor) /* case of random colors */
-            return MAX_PCT_COUNT;
-        for(col = colsch->colors; *col != nocolor; col++)
-            cnt += 101-colsch->spd + colsch->dly;
-        /* Ceil rounding: */
-        return cnt/COLPAIR_PER_PCT + (cnt % COLPAIR_PER_PCT != 0);
+        return count_blink_data(colsch);
     } else {
         return -1;
     }
 }
 
-static void fill_data(const struct colscheme *colsch, byte_t *da)
+static int count_blink_data(const struct colscheme *colsch)
+{
+    int cnt = 0;
+    const int *col;
+
+    if(colsch->colors[0] == nocolor) /* case of random colors */
+        return MAX_PCT_COUNT;
+
+    for(col = colsch->colors; *col != nocolor; col++)
+        cnt += 101-colsch->spd + colsch->dly;
+
+    /* Ceil rounding: */
+    if(cnt < MAX_COLPAIR_COUNT) {
+        return cnt/COLPAIR_PER_PCT + (cnt % COLPAIR_PER_PCT != 0);
+    }
+    return MAX_PCT_COUNT;
+}
+
+static void fill_data(const struct colscheme *colsch, byte_t *da, int pckcnt)
 {
     if(strequ(colsch->mode, "solid")) {
         sequence_solid(colsch->colors, colsch->br, da);
-    } else {
+    } else if(strequ(colsch->mode, "blink")) {
         if(colsch->colors[0] == nocolor)
             sequence_blink_random(colsch->br, colsch->spd, colsch->dly, da);
-        sequence_blink(colsch, da);
+        sequence_blink(colsch, da, pckcnt);
     }
 }
 
@@ -76,10 +119,28 @@ static void sequence_blink_random(int bright, int speed, int delay, byte_t *da)
     return ;
 }
 
-static void sequence_blink(const struct colscheme *colsch, byte_t *da)
+static void sequence_blink(const struct colscheme *colsch, byte_t *da,
+                           int pckcnt)
 {
-    /* To be written */
-    return ;
+    const int *col;
+    if(pckcnt < MAX_PCT_COUNT) {
+        for(col = colsch->colors; *col != nocolor; col++) {
+            blink_color_fill(*col, 101-colsch->spd, colsch->br, da);
+            da += 2*BYTE_STEP*(101-colsch->spd);
+            blink_color_fill(black, colsch->dly, 0, da);
+            da += 2*BYTE_STEP*colsch->dly;
+        }
+    }
+}
+
+static void blink_color_fill(int color, int size, int bright, byte_t *da)
+{
+    int i = 0;
+    for(; i < size; i++) {
+        *da = RGB_CODE;
+        write_hexcolor(color, bright, da+1);
+        da += 2*BYTE_STEP;
+    }
 }
 
 static void write_hexcolor(int color, int bright, byte_t *mem)
