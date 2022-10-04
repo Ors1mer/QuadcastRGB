@@ -1,7 +1,5 @@
 #include "rgbmodes.h"
 
-static void print_datpack(datpack *da, int pck_cnt);
-
 static int biggest_data(struct colschemes *cs);
 static int count_data(const struct colscheme *colsch);
 static int count_blink_data(const struct colscheme *colsch);
@@ -10,49 +8,37 @@ static void fill_data(const struct colscheme *colsch, byte_t *da, int pckcnt);
 /* Solid */
 static void sequence_solid(const int *colors, int bright, byte_t *da);
 
-
 /* Blink */
-static void sequence_blink_random(int bright, int speed,
-                                  int delay, byte_t *da);
+static void sequence_blink_random(int bright, int speed, int delay,
+                                  byte_t *da);
 static void sequence_blink(const struct colscheme *colsch, byte_t *da,
                            int pckcnt);
 static void blink_color_fill(int color, int size, int bright, byte_t *da);
 
-
+/* Shared */
 static void write_hexcolor(int color, int bright, byte_t *mem);
+
+#ifdef DEBUG
+static void print_datpack(datpack *da, int pck_cnt);
+#endif
 
 datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt)
 {
     datpack *data_arr;
     *pck_cnt = biggest_data(cs);
     data_arr = calloc(sizeof(datpack), *pck_cnt);
-    /*DEBUGPRINT*/
-    printf("Packets to be sent: %d\n", *pck_cnt);
 
     fill_data(&cs->upper, *data_arr, *pck_cnt);
     fill_data(&cs->lower, *data_arr+BYTE_STEP, *pck_cnt);
 
-    /*DEBUGPRINT*/
+    #ifdef DEBUG
+    printf(N_("Packets to be sent: %d\n"), *pck_cnt);
     print_datpack(data_arr, *pck_cnt);
+    #endif
 
     return data_arr;
 }
 
-static void print_datpack(datpack *da, int pck_cnt)
-{
-    int i, j;
-    for(j = 0; j < pck_cnt; j++) {
-        printf("Packet %d:\n", j+1);
-        for(i = 0; i < DATA_PACKET_SIZE; i++) {
-            printf("%02X ", (unsigned int)da[j][i]);
-            if((i+1) % 4 == 0)
-                printf("\t");
-            if((i+1) % 8 == 0)
-                puts("");
-        }
-        puts("");
-    }
-}
 
 static int biggest_data(struct colschemes *cs)
 {
@@ -151,3 +137,21 @@ static void write_hexcolor(int color, int bright, byte_t *mem)
         mem++;
     }
 }
+
+#ifdef DEBUG
+static void print_datpack(datpack *da, int pck_cnt)
+{
+    int i, j;
+    for(j = 0; j < pck_cnt; j++) {
+        printf("Packet %d:\n", j+1);
+        for(i = 0; i < DATA_PACKET_SIZE; i++) {
+            printf("%02X ", (unsigned int)da[j][i]);
+            if((i+1) % 4 == 0)
+                printf("\t");
+            if((i+1) % 8 == 0)
+                puts("");
+        }
+        puts("");
+    }
+}
+#endif

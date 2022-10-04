@@ -22,28 +22,20 @@
 
 static libusb_device *dev_search();
 static int is_micro(libusb_device *dev);
+
 static int send_header(libusb_device_handle *handle,
                        byte_t op_code, short size);
 static int send_footer(libusb_device_handle *handle);
 static void send_empty(libusb_device_handle *handle);
+static int send_empty_interrupt(libusb_device_handle *handle);
+
 static int send_startup_end_packet(libusb_device_handle *handle);
 static int send_data(libusb_device_handle *handle,
                      datpack *data_arr, int pck_cnt);
-static int send_size(libusb_device_handle *handle,
-                     datpack *data_arr, int pck_cnt);
+static int send_size(libusb_device_handle *handle, int colpairs);
 static short count_color_pairs(datpack *data_arr, int pck_cnt);
 
-static void print_packet(byte_t *pck, char *str)
-{
-    byte_t *p;
-    puts(str);
-    for(p = pck; p < pck+PACKET_SIZE; p++) {
-        printf("%02X ", (int)(*p));
-        if((p-pck+1) % 16 == 0)
-            puts("");
-    }
-    puts("");
-}
+static void print_packet(byte_t *pck, char *str);
 
 libusb_device_handle *open_micro(datpack *data_arr)
 { 
@@ -117,7 +109,7 @@ void send_startup_packets(libusb_device_handle *handle, datpack *data_arr,
 
     errcode = send_footer(handle);
     HANDLE_TRANSFER_ERR(errcode);
-    send_empty(handle);
+    send_empty_interrupt(handle);
 }
 
 void send_packets(libusb_device_handle *handle, datpack *data_arr, int pck_cnt)
@@ -130,10 +122,9 @@ void send_packets(libusb_device_handle *handle, datpack *data_arr, int pck_cnt)
     HANDLE_TRANSFER_ERR(errcode);
     errcode = send_footer(handle);
     HANDLE_TRANSFER_ERR(errcode);
-
     errcode = send_header(handle, SIZE_HEADER, 1);
     HANDLE_TRANSFER_ERR(errcode);
-    errcode = send_size(handle, data_arr, pck_cnt);
+    errcode = send_size(handle, count_color_pairs(data_arr, pck_cnt));
     HANDLE_TRANSFER_ERR(errcode);
     errcode = send_footer(handle);
     HANDLE_TRANSFER_ERR(errcode);
@@ -155,7 +146,9 @@ static int send_header(libusb_device_handle *handle,
     sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
                                    WVALUE, WINDEX, packet, PACKET_SIZE,
                                    TIMEOUT);
+    #ifdef DEBUG
     print_packet(packet, "Header:");
+    #endif
     free(packet);
     if(sent != PACKET_SIZE) {
         fprintf(stderr, HEADER_ERR_MSG, libusb_strerror(sent));
@@ -177,7 +170,9 @@ static int send_footer(libusb_device_handle *handle)
     sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
                                    WVALUE, WINDEX, packet, PACKET_SIZE,
                                    TIMEOUT);
+    #ifdef DEBUG
     print_packet(packet, "Footer:");
+    #endif
     free(packet);
     if(sent != PACKET_SIZE) {
         fprintf(stderr, FOOTER_ERR_MSG, libusb_strerror(sent));
@@ -193,8 +188,28 @@ static void send_empty(libusb_device_handle *handle)
     packet = calloc(PACKET_SIZE, 1);
     libusb_control_transfer(handle, BMREQUEST_TYPE_IN, BREQUEST_IN, WVALUE,
                             WINDEX, packet, PACKET_SIZE, TIMEOUT);
+    #ifdef DEBUG
     print_packet(packet, "Empty:");
+    #endif
     free(packet);
+}
+
+static int send_empty_interrupt(libusb_device_handle *handle)
+{
+    byte_t *packet;
+    int transferred, length = 8;
+    short sent;
+
+    packet = calloc(PACKET_SIZE, 1);
+    sent = libusb_interrupt_transfer(handle, INTR_EP, packet, length,
+                                     &transferred, TIMEOUT);
+    #ifdef DEBUG
+    print_packet(packet, "Empty interrupt:");
+    #endif
+    free(packet);
+    if(!sent)
+        fprintf(stderr, INTRRPT_ERR_MSG, libusb_strerror(sent));
+    return sent;
 }
 
 static int send_data(libusb_device_handle *handle,
@@ -206,7 +221,9 @@ static int send_data(libusb_device_handle *handle,
         sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT,
                                        BREQUEST_OUT, WVALUE, WINDEX,
                                        *packet, PACKET_SIZE, TIMEOUT);
+        #ifdef DEBUG
         print_packet(*packet, "Data:");
+        #endif
         if(sent != PACKET_SIZE) {
             fprintf(stderr, DATAPCK_ERR_MSG, libusb_strerror(sent));
             return sent;
@@ -215,11 +232,10 @@ static int send_data(libusb_device_handle *handle,
     return 0;
 }
 
-static int send_size(libusb_device_handle *handle,
-                     datpack *data_arr, int pck_cnt)
+static int send_size(libusb_device_handle *handle, int colpairs)
 {
     byte_t *packet;
-    short sent, colpairs;
+    short sent;
     packet = calloc(PACKET_SIZE, 1);
     /* Operation codes */
     *packet = 0x08;
@@ -227,14 +243,15 @@ static int send_size(libusb_device_handle *handle,
     *(packet+PACKET_SIZE-2) = 0xaa;
     *(packet+PACKET_SIZE-1) = 0x55;
     /* The amount of color pairs (upper and lower hex nums) */
-    colpairs = count_color_pairs(data_arr, pck_cnt);
     *(packet+PACKET_SIZE-4) = (byte_t)(colpairs & 0xff); /* 1st byte */
     *(packet+PACKET_SIZE-3) = (byte_t)((colpairs >> 8) & 0xff); /* 2nd byte */
 
     sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
                                    WVALUE, WINDEX, packet, PACKET_SIZE,
                                    TIMEOUT);
+    #ifdef DEBUG
     print_packet(packet, "Size:");
+    #endif
     free(packet);
     if(sent != PACKET_SIZE) {
         fprintf(stderr, SIZEPCK_ERR_MSG, libusb_strerror(sent));
@@ -255,7 +272,9 @@ static int send_startup_end_packet(libusb_device_handle *handle)
     sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
                                    WVALUE, WINDEX, packet, PACKET_SIZE,
                                    TIMEOUT);
+    #ifdef DEBUG
     print_packet(packet, "Endpacket:");
+    #endif
     free(packet);
     if(sent != PACKET_SIZE) {
         fprintf(stderr, SIZEPCK_ERR_MSG, libusb_strerror(sent));
@@ -278,3 +297,17 @@ static short count_color_pairs(datpack *data_arr, int pck_cnt)
     }
     return cnt;
 }
+
+#ifdef DEBUG
+static void print_packet(byte_t *pck, char *str)
+{
+    byte_t *p;
+    puts(str);
+    for(p = pck; p < pck+PACKET_SIZE; p++) {
+        printf("%02X ", (int)(*p));
+        if((p-pck+1) % 16 == 0)
+            puts("");
+    }
+    puts("");
+}
+#endif

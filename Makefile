@@ -1,6 +1,6 @@
 OS = linux # should be overriden if necessary
 
-CFLAGS_DEV = -g -Wall
+CFLAGS_DEV = -g -Wall -D DEBUG
 CFLAGS_INS = -s -O2
 
 LIBS = -lusb-1.0
@@ -24,22 +24,29 @@ ifeq ($(OS),freebsd) # thus, gcc required on FreeBSD
 endif
 # END
 
-quadcastrgb: main.c $(OBJMODULES)
-	$(CC) $(CFLAGS_INS) $^ $(LIBS) -o $(BINPATH)
-
 dev: main.c $(OBJMODULES)
 	$(CC) $(CFLAGS_DEV) $^ $(LIBS) -o $(DEVBINPATH)
 
-install: quadcastrgb $(MANPATH).gz $(BINDIR_INS) $(MANDIR_INS)
-	cp $(BINPATH) $(BINDIR_INS)
-	cp $(MANPATH).gz $(MANDIR_INS)
+quadcastrgb: main.c $(OBJMODULES)
+	$(CC) $(CFLAGS_INS) $^ $(LIBS) -o $(BINPATH)
+
 
 # For directories
 $${HOME}/%/:
 	mkdir -p $@
 # For modules
 %.o: %.c %.h
+ifneq (quadcastrgb, $(MAKECMDGOALS))
 	$(CC) $(CFLAGS_DEV) -c $< -o $@
+else
+	$(CC) $(CFLAGS_INS) -c $< -o $@
+endif
+
+
+.PHONY:
+install: quadcastrgb $(MANPATH).gz $(BINDIR_INS) $(MANDIR_INS)
+	cp $(BINPATH) $(BINDIR_INS)
+	cp $(MANPATH).gz $(MANDIR_INS)
 
 man: nix/manpage.md
 	pandoc $< -s -t man -o $(MANPATH)
@@ -56,6 +63,5 @@ deps.mk: $(SRCMODULES)
 tags:
 	ctags *.c $(SRCMODULES)
 
-.PHONY:
 clean:
 	rm -f $(OBJMODULES) $(BINPATH) $(DEVBINPATH) tags
