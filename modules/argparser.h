@@ -17,7 +17,7 @@
 #define MODES_CNT 5
 #define RAINBOW_CNT 9
 #define MAX_BR_SPD_DLY 100
-#define SPD_DEFAULT 50
+#define SPD_DEFAULT 81
 #define DLY_DEFAULT 10
 
 enum hexcolors {
@@ -47,7 +47,7 @@ struct colscheme {
     int colors[COLORS_CNT];
     int br;
     int spd; /* ignored in solid */
-    int dly; /* only used in blink */
+    int dly; /* blink-only */
 };
 
 struct colschemes {

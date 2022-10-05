@@ -197,7 +197,7 @@ static void send_empty(libusb_device_handle *handle)
 static int send_empty_interrupt(libusb_device_handle *handle)
 {
     byte_t *packet;
-    int transferred, length = 8;
+    int transferred, length = 0;
     short sent;
 
     packet = calloc(PACKET_SIZE, 1);
