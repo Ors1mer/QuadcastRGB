@@ -1,8 +1,8 @@
 #include "rgbmodes.h"
 
 static int biggest_data(struct colschemes *cs);
-static int count_data(const struct colscheme *colsch);
-static int count_blink_data(const struct colscheme *colsch);
+static int count_data(struct colscheme *colsch);
+static int count_blink_data(struct colscheme *colsch);
 static void fill_data(const struct colscheme *colsch, byte_t *da, int pckcnt);
 
 /* Solid */
@@ -32,7 +32,6 @@ datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt)
     fill_data(&cs->lower, *data_arr+BYTE_STEP, *pck_cnt);
 
     #ifdef DEBUG
-    printf(N_("Packets to be sent: %d\n"), *pck_cnt);
     print_datpack(data_arr, *pck_cnt);
     #endif
 
@@ -53,7 +52,7 @@ static int biggest_data(struct colschemes *cs)
     return (su >= sl ? su : sl);
 }
 
-static int count_data(const struct colscheme *colsch)
+static int count_data(struct colscheme *colsch)
 {
     if(strequ(colsch->mode, "solid")) {
         return 1;
@@ -64,22 +63,24 @@ static int count_data(const struct colscheme *colsch)
     }
 }
 
-static int count_blink_data(const struct colscheme *colsch)
+static int count_blink_data(struct colscheme *colsch)
 {
     int cnt = 0;
-    const int *col;
+    int *col;
 
     if(colsch->colors[0] == nocolor) /* case of random colors */
         return MAX_PCT_COUNT;
 
-    for(col = colsch->colors; *col != nocolor; col++)
+    for(col = colsch->colors; *col != nocolor; col++) {
+        if(cnt + 101-colsch->spd + colsch->dly > MAX_COLPAIR_COUNT) {
+            *col = nocolor; /* strip the sequence to avoid overflow */
+            break;
+        }
         cnt += 101-colsch->spd + colsch->dly;
+    }
 
     /* Ceil rounding: */
-    if(cnt < MAX_COLPAIR_COUNT) {
-        return cnt/COLPAIR_PER_PCT + (cnt % COLPAIR_PER_PCT != 0);
-    }
-    return MAX_PCT_COUNT;
+    return cnt/COLPAIR_PER_PCT + (cnt % COLPAIR_PER_PCT != 0);
 }
 
 static void fill_data(const struct colscheme *colsch, byte_t *da, int pckcnt)
@@ -109,13 +110,14 @@ static void sequence_blink(const struct colscheme *colsch, byte_t *da,
                            int pckcnt)
 {
     const int *col;
-    if(pckcnt < MAX_PCT_COUNT) {
-        for(col = colsch->colors; *col != nocolor; col++) {
-            blink_color_fill(*col, 101-colsch->spd, colsch->br, da);
-            da += 2*BYTE_STEP*(101-colsch->spd);
-            blink_color_fill(black, colsch->dly, 0, da);
-            da += 2*BYTE_STEP*colsch->dly;
-        }
+    int count = 0;
+    int col_seg = 101-colsch->spd; /* size of colorful segment */
+    for(col = colsch->colors; *col != nocolor; col++) {
+        blink_color_fill(*col, col_seg, colsch->br, da);
+        da += 2*BYTE_STEP*col_seg;
+        blink_color_fill(black, colsch->dly, 0, da);
+        da += 2*BYTE_STEP*colsch->dly;
+        count += col_seg + colsch->dly;
     }
 }
 
@@ -142,8 +144,9 @@ static void write_hexcolor(int color, int bright, byte_t *mem)
 static void print_datpack(datpack *da, int pck_cnt)
 {
     int i, j;
+    printf(N_("Packets to be sent: %d\n"), pck_cnt);
     for(j = 0; j < pck_cnt; j++) {
-        printf("Packet %d:\n", j+1);
+        printf(N_("Packet %d:\n"), j+1);
         for(i = 0; i < DATA_PACKET_SIZE; i++) {
             printf("%02X ", (unsigned int)da[j][i]);
             if((i+1) % 4 == 0)
