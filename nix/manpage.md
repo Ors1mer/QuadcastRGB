@@ -16,7 +16,7 @@ error message to stderr and finishes with an error code.
 
 Available modes:  
 - solid  
-- blink (not supported yet)  
+- blink  
 - cycle (not supperted yet)  
 - lightning (not supported yet)  
 - wave (not supported yet)  
@@ -53,6 +53,9 @@ default). Ignored in solid mode
 **quadcastrgb solid**
 : Set default solid color (#f20000) for the whole micro
 
+**quadcastrgb blink**
+: Set random blinking colors
+
 **quadcastrgb -a cycle**
 : Set default cycle (rainbow) mode for the whole micro
 
@@ -87,6 +90,12 @@ the root privileges (not recommended) or creating a dev rule (recommended)
 It isn't possible to edit only one (upper or lower) diode group without
 changing the other. If a mode set to only one diode group, the other is set to
 solid black (i. e. no color).
+
+# BUGS
+If any mode except solid is set, the microphone may display random unexpected
+colors once in a while. This doesn't mean that it is broken in any way as the
+device is well-bricking-protected. The solutions are: try executing the program
+several more times, reconnect the device.
 
 # COPYRIGHT
 Copyright © 2022 Ors1mer. License GPLv3+: GNU GLP version 3 or later
