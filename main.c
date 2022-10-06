@@ -8,8 +8,6 @@
 #include "modules/rgbmodes.h"
 #include "modules/devio.h"
 
-#define MAX_RGB_ARR_SIZE 720
-
 #define LOCALESETUP() \
     setlocale(LC_CTYPE, ""); \
     setlocale(LC_MESSAGES, ""); \

@@ -1,4 +1,4 @@
-% QUADCASTRGB(1) quadcastrgb 0.1
+% QUADCASTRGB(1) quadcastrgb 0.1.9
 % Ors1mer <https://gitlab.com/Ors1mer>, <https://github.com/Ors1mer>
 % August 2022
 

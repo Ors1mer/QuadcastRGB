@@ -14,10 +14,10 @@ so far.
 ### Things yet to be done:
 - *the modes: ~solid, blink,~ cycle, lightning, wave*
 - *clear buffer before passing the data*
-- *~brightness &~ speed*
+- *~brightness & speed~*
 - *~delay - **blink**-specific option~*
 - *~actual installation~*
-- *save the previous settings*
+- *save the previous settings (bloat?)*
 
 ### Examples:
 ```bash
