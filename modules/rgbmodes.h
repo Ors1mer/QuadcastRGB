@@ -1,6 +1,29 @@
-/* rgbmodes.h
+/* quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
+ * File rgbmodes.h
  * Assembles data packets from "colorschemes" structure.
  * The only function returns pointer to the array of data packets.
+ *
+ * <----- License notice ----->
+ * Copyright (C) 2022 Ors1mer
+ *
+ * You may contact the author by email:
+ * ors1mer_dev [[at]] proton.me
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 2 of the License ONLY.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see
+ * <https://www.gnu.org/licenses/gpl-2.0.en.html>. For any questions
+ * concerning the license, you can write to <licensing@fsf.org>.
+ * Also, you may visit the Free Software Foundation at
+ * 51 Franklin Street, Fifth Floor Boston, MA 02110 USA. 
  */
 #ifndef RGBMODES_SENTRY
 #define RGBMODES_SENTRY

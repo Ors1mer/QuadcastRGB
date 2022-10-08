@@ -89,7 +89,7 @@ changing the other. If a mode set to only one diode group, the other is set to
 solid black (i. e. no color).
 
 # COPYRIGHT
-Copyright © 2022 Ors1mer. License GPLv3+: GNU GLP version 3 or later
-<https://gnu.org/licenses/gpl.html>. This is free software: you are free to
-change and redistribute it. There is NO WARRANTY, to the extent permitted by
-law.
+Copyright (C) 2022 Ors1mer. License GPLv2: GNU GLP version 2 only
+<https://www.gnu.org/licenses/gpl-2.0.en.html>.
+This is free software: you are free to change and redistribute it. There is
+NO WARRANTY, to the extent permitted by law.
