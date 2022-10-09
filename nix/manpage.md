@@ -98,7 +98,7 @@ device is well-bricking-protected. The solutions are: try executing the program
 several more times, reconnect the device.
 
 # COPYRIGHT
-Copyright (C) 2022 Ors1mer. License GPLv2: GNU GLP version 2 only
+Copyright (C) 2022 Ors1mer. License GPLv2: GNU GPL version 2 only
 <https://www.gnu.org/licenses/gpl-2.0.en.html>.
 This is free software: you are free to change and redistribute it. There is
 NO WARRANTY, to the extent permitted by law.
