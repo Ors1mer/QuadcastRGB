@@ -28,8 +28,8 @@
 /* Static declarations */
 static void set_arg(const char ***arg_pp, const char **argv_end,
                     struct colschemes *cs, int *state, int *verbose);
-static void set_bs(const char **arg_p, const char **argv_end,
-                   int state, struct colschemes *cs);
+static void set_br_spd_dly(const char **arg_p, const char **argv_end,
+                           int state, struct colschemes *cs);
 static void set_mode(const char ***arg_pp, const char **argv_end,
                      int state, struct colschemes *cs);
 static void set_colors(const char ***arg_pp, const char **argv_end,
@@ -74,8 +74,9 @@ struct colschemes *parse_arg(int argc, const char **argv, int *verbose)
     int cs_state = all;
 
     /* Set defaults */
-    cs->upper.br = cs->lower.br = MAX_BR_SPD;
-    cs->upper.spd = cs->lower.spd = MAX_BR_SPD;
+    cs->upper.br = cs->lower.br = MAX_BR_SPD_DLY;
+    cs->upper.spd = cs->lower.spd = SPD_DEFAULT;
+    cs->upper.dly = cs->lower.dly = DLY_DEFAULT;
     cs->upper.mode = cs->lower.mode = NULL;
 
     for(arg_p = argv+1; arg_p < argv+argc; arg_p++)
@@ -109,8 +110,9 @@ static void set_arg(const char ***arg_pp, const char **argv_end,
         *state = upper;
     } else if(strequ(**arg_pp, "-l") || strequ(**arg_pp, "--lower")) {
         *state = lower;
-    } else if(strequ(**arg_pp, "-b") || strequ(**arg_pp, "-s")) {
-        set_bs(*arg_pp, argv_end, *state, cs);
+    } else if(strequ(**arg_pp, "-b") || strequ(**arg_pp, "-s") ||
+                                        strequ(**arg_pp, "-d")) {
+        set_br_spd_dly(*arg_pp, argv_end, *state, cs);
         (*arg_pp)++; /* skip option's parameter */
     } else if(is_mode(**arg_pp)) {
         set_mode(arg_pp, argv_end, *state, cs);
@@ -131,8 +133,8 @@ static int is_mode(const char *str)
     return 0;
 }
 
-static void set_bs(const char **arg_p, const char **argv_end,
-                   int state, struct colschemes *cs)
+static void set_br_spd_dly(const char **arg_p, const char **argv_end,
+                           int state, struct colschemes *cs)
 {
     short num;
     if(no_opt_param(arg_p, argv_end)) {
@@ -140,14 +142,16 @@ static void set_bs(const char **arg_p, const char **argv_end,
         free(cs); exit(argerr);
     }
     num = atoi(*(arg_p+1));
-    if(num > MAX_BR_SPD) {
+    if(num > MAX_BR_SPD_DLY) {
         fprintf(stderr, BS_BADPARAM_MSG, *arg_p);
         free(cs); exit(argerr);
     }
-    if(strequ(*arg_p, "-b")) { /* it's brightness */
+    if(strequ(*arg_p, "-b")) {        /* brightness */
         write_int_param(&(cs->upper.br), &(cs->lower.br), num, state);
-    } else { /* it's speed */
+    } else if(strequ(*arg_p, "-s")) { /* speed */
         write_int_param(&(cs->upper.spd), &(cs->lower.spd), num, state);
+    } else if(strequ(*arg_p, "-d")) { /* delay */
+        write_int_param(&(cs->upper.dly), &(cs->lower.dly), num, state);
     }
 }
 

@@ -12,21 +12,25 @@ so far.
 - *no need to run in the background*
 
 ### Things yet to be done:
-- *the modes: ~solid,~ blink, cycle, lightning, wave*
-- *~brightness &~ speed*
-- *delay - **blink**-specific option*
+- *the modes: ~solid, blink,~ cycle, lightning, wave*
+- *clear buffer before passing the data*
+- *~brightness & speed~*
+- *~delay - **blink**-specific option~*
 - *~actual installation~*
-- *save the previous settings*
+- *save the previous settings (bloat?)*
 
 ### Examples:
 ```bash
-quadcastrgb solid # set default solid color (#f20000) for the whole micro
-
-quadcastrgb -a cycle # set default cycle (rainbow) mode for the whole micro
-
-quadcastrgb -u solid 4c0099 -l solid ff6000 # set purple color for the upper part and yellow for the lower
-
-quadcastrgb -u -b 50 cycle -l lightning ff6000 # set default cycle mode for the upper diode with 50% brightness and yellow lightning for the lower
+# Default solid color (#f20000, red) for the whole micro:
+quadcastrgb solid 
+# Random blinking colors:
+quadcastrgb blink
+# Default cycle (rainbow) mode for the whole micro:
+quadcastrgb -a cycle 
+# Purple color for the upper part and yellow for the lower:
+quadcastrgb -u solid 4c0099 -l solid ff6000 
+# Default cycle mode for the upper diode with 50% brightness and yellow lightning for the lower:
+quadcastrgb -u -b 50 cycle -l lightning ff6000 
 ```
 ## Install
 ### Compiling from source
@@ -59,8 +63,24 @@ for the microphone to allow certain users access to it.
 cd /etc/udev/rules.d 
 # Do under superuser:
 vi 10-quadcast-perm.rules 
-# Write this line, save & exit (:wq):
+```
+Write this line, save & exit (:wq):
+```bash
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="0951", ATTRS{idProduct}=="171f", MODE="0660", GROUP="hyperrgb" 
 ```
 Now the microphone is accessible for the group "hyperrgb". Add your user to the
 group and it's done.
+
+### Problem 4: random unexpected colors are displayed sometimes
+This problem may occur if any mode except solid is used. The solid mode works
+always as expected.
+
+The problem occurs probably due to the uncleared buffer in the device memory.
+I'm working on the solution right now.
+
+Micro is well brick-resistant, so nothing bad will happen anyway.
+
+**Hotfix solutions:**
+ - try launching the program several times with the same options (3-4 times typically solves the issue)
+ - reconnect the device
+ - try other modes/options (solid works well all the time)

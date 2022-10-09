@@ -29,8 +29,6 @@
 #include "modules/rgbmodes.h"
 #include "modules/devio.h"
 
-#define MAX_RGB_ARR_SIZE 720
-
 #define LOCALESETUP() \
     setlocale(LC_CTYPE, ""); \
     setlocale(LC_MESSAGES, ""); \
@@ -53,7 +51,6 @@ int main(int argc, const char **argv)
     datpack *data_arr;
     libusb_device_handle *handle;
     int verbose = 0, data_packet_cnt;
-
     LOCALESETUP();
     /* Parse arguments */
     cs = parse_arg(argc, argv, &verbose);
@@ -67,6 +64,7 @@ int main(int argc, const char **argv)
     handle = open_micro(data_arr); /* data_arr for freeing memory */
     /* Send packets */
     VERBOSE_PRINT(verbose, VERBOSE4_PKT);
+    send_startup_packets(handle, data_arr, data_packet_cnt);
     send_packets(handle, data_arr, data_packet_cnt);
     free(data_arr);
     libusb_close(handle);
