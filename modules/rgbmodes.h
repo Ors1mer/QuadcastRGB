@@ -1,7 +1,7 @@
 /* quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
  * File rgbmodes.h
  * Assembles data packets from "colorschemes" structure.
- * The only function returns pointer to the array of data packets.
+ * parse_colorscheme returns pointer to the array of data packets.
  *
  * <----- License notice ----->
  * Copyright (C) 2022 Ors1mer
@@ -39,7 +39,7 @@
 #define MAX_COLPAIR_COUNT (COLPAIR_PER_PCT * MAX_PCT_COUNT)
 
 #define DATA_PACKET_SIZE 64
-#define BYTE_STEP 4 /* Used to skip some part of bytes in a packet */
+#define BYTE_STEP 4 /* used to skip some part of bytes in a packet */
 #define RGB_CODE 0x81
 /* Blink random */
 #define MAX_SPD 101
@@ -58,5 +58,6 @@ typedef byte_t datpack[DATA_PACKET_SIZE];
 
 /* Functions */
 datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt);
+short count_color_commands(datpack *data_arr, int pck_cnt, int colgroup);
 
 #endif

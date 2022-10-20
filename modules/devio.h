@@ -31,7 +31,7 @@
 
 #include <libusb-1.0/libusb.h>
 #include "locale_macros.h"
-#include "rgbmodes.h" /* for datpack & byte_t types, define constants */
+#include "rgbmodes.h" /* for datpack & byte_t types, count_color_pairs, defs */
 
 /* Constants */
 #define DEV_VID 0x0951 /* vendor ID */

@@ -58,7 +58,6 @@ static int send_startup_end_packet(libusb_device_handle *handle);
 static int send_data(libusb_device_handle *handle,
                      datpack *data_arr, int pck_cnt);
 static int send_size(libusb_device_handle *handle, int colpairs);
-static short count_color_pairs(datpack *data_arr, int pck_cnt);
 
 static void print_packet(byte_t *pck, char *str);
 
@@ -149,7 +148,7 @@ void send_packets(libusb_device_handle *handle, datpack *data_arr, int pck_cnt)
     HANDLE_TRANSFER_ERR(errcode);
     errcode = send_header(handle, SIZE_HEADER, 1);
     HANDLE_TRANSFER_ERR(errcode);
-    errcode = send_size(handle, count_color_pairs(data_arr, pck_cnt));
+    errcode = send_size(handle, count_color_commands(data_arr, pck_cnt, 0));
     HANDLE_TRANSFER_ERR(errcode);
     errcode = send_footer(handle);
     HANDLE_TRANSFER_ERR(errcode);
@@ -307,20 +306,6 @@ static int send_startup_end_packet(libusb_device_handle *handle)
     }
 
     return 0;
-}
-
-static short count_color_pairs(datpack *data_arr, int pck_cnt)
-{
-    short cnt;
-    byte_t *b;
-    cnt = (pck_cnt-1)*8;
-    for(b = data_arr[pck_cnt-1]; b < data_arr[pck_cnt-1]+64; b += 8) {
-        if(*b != RGB_CODE || *(b+4) != RGB_CODE) {
-            break;
-        }
-        cnt++;
-    }
-    return cnt;
 }
 
 #ifdef DEBUG

@@ -25,10 +25,11 @@
  */
 #include "rgbmodes.h"
 
-static int biggest_data(struct colschemes *cs);
 static int count_data(struct colscheme *colsch);
 static int count_blink_data(struct colscheme *colsch);
 static void fill_data(const struct colscheme *colsch, byte_t *da, int pckcnt);
+static void equalize(int upper_size, int lower_size, datpack *da);
+static void fillup_to(size_t copy_size, byte_t *curr, byte_t *finish);
 
 /* Solid */
 static void sequence_solid(const int *colors, int bright, byte_t *da);
@@ -53,11 +54,21 @@ static void print_datpack(datpack *da, int pck_cnt);
 datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt)
 {
     datpack *data_arr;
-    *pck_cnt = biggest_data(cs);
+    int seq_upper, seq_lower;
+
+    seq_upper = count_data(&cs->upper);
+    seq_lower = count_data(&cs->lower);
+    if(seq_upper < 1 || seq_lower < 1) {
+        fprintf(stderr, NOSUPPORT_MSG);
+        free(cs); exit(254);
+    }
+
+    *pck_cnt = seq_upper >= seq_lower ? seq_upper : seq_lower;
     data_arr = calloc(sizeof(datpack), *pck_cnt);
 
     fill_data(&cs->upper, *data_arr, *pck_cnt);
     fill_data(&cs->lower, *data_arr+BYTE_STEP, *pck_cnt);
+    equalize(seq_upper, seq_lower, data_arr);
 
     #ifdef DEBUG
     print_datpack(data_arr, *pck_cnt);
@@ -66,18 +77,20 @@ datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt)
     return data_arr;
 }
 
-
-static int biggest_data(struct colschemes *cs)
+short count_color_commands(datpack *data_arr, int pck_cnt, int colgroup)
 {
-    int su = count_data(&cs->upper);
-    int sl = count_data(&cs->lower);
-
-    if(su < 1 || sl < 1) {
-        fprintf(stderr, NOSUPPORT_MSG);
-        free(cs); exit(254);
+    short cnt, step = 0;
+    byte_t *b;
+    if(colgroup) /* case of lower color commands */
+        step = BYTE_STEP;
+    cnt = (pck_cnt-1)*8;
+    for(b = data_arr[pck_cnt-1]; b < data_arr[pck_cnt-1]+DATA_PACKET_SIZE;
+                                                         b += 2*BYTE_STEP) {
+        if(*(b+step) != RGB_CODE)
+            break;
+        cnt++;
     }
-
-    return (su >= sl ? su : sl);
+    return cnt;
 }
 
 static int count_data(struct colscheme *colsch)
@@ -126,6 +139,32 @@ static void fill_data(const struct colscheme *colsch, byte_t *da, int pckcnt)
     }
 }
 
+static void equalize(int upper_size, int lower_size, datpack *da)
+{
+    enum { upper = 0, lower };
+    byte_t *upper_end, *lower_end;
+    upper_size = count_color_commands(da, upper_size, upper);
+    lower_size = count_color_commands(da, lower_size, lower);
+    upper_end = *da + 2*BYTE_STEP*(upper_size-1);
+    lower_end = *da + 2*BYTE_STEP*(lower_size-1) + BYTE_STEP;
+
+    if(upper_size < lower_size) {
+        fillup_to(upper_size, upper_end+2*BYTE_STEP, lower_end-BYTE_STEP);
+    } else if(lower_size < upper_size) {
+        fillup_to(lower_size, lower_end+2*BYTE_STEP, upper_end+BYTE_STEP);
+    } /* else equalizing isn't needed */
+}
+
+static void fillup_to(size_t copy_size, byte_t *curr, byte_t *finish)
+{
+    while(curr <= finish) {
+        memcpy(curr, curr-(2*BYTE_STEP*copy_size), BYTE_STEP);
+        curr += 2*BYTE_STEP;
+    }
+}
+
+
+/* Mode-related functions */
 static void sequence_solid(const int *colors, int bright, byte_t *da)
 {
     *da = RGB_CODE; /* write code to the first byte */
