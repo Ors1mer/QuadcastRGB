@@ -61,8 +61,9 @@ static int send_size(libusb_device_handle *handle, int colpairs);
 
 static void print_packet(byte_t *pck, char *str);
 
+
 libusb_device_handle *open_micro(datpack *data_arr)
-{ 
+{
     libusb_device **devs;
     libusb_device *micro_dev = NULL;
     libusb_device_handle *handle;
@@ -76,17 +77,17 @@ libusb_device_handle *open_micro(datpack *data_arr)
     }
     dev_count = libusb_get_device_list(NULL, &devs);
     HANDLE_ERR(dev_count < 0, DEVLIST_ERR_MSG);
-
     micro_dev = dev_search(devs, dev_count);
     HANDLE_ERR(!micro_dev, NODEV_ERR_MSG);
-
     errcode = libusb_open(micro_dev, &handle);
     if(errcode) {
         fprintf(stderr, N_("%s\n%s"), libusb_strerror(errcode), OPEN_ERR_MSG);
         FREE_AND_EXIT();
     }
     libusb_free_device_list(devs, 1);
-    libusb_set_auto_detach_kernel_driver(handle, 1); /* no support possible */
+    libusb_set_auto_detach_kernel_driver(handle, 1);
+    libusb_claim_interface(handle, 0);
+    libusb_claim_interface(handle, 1);
     return handle;
 }
 
@@ -133,7 +134,7 @@ void send_startup_packets(libusb_device_handle *handle, datpack *data_arr,
 
     errcode = send_footer(handle);
     HANDLE_TRANSFER_ERR(errcode);
-    send_empty_interrupt(handle);
+    send_empty_interrupt(handle); /* timeout error occurs, skipping it */
 }
 
 void send_packets(libusb_device_handle *handle, datpack *data_arr, int pck_cnt)
@@ -220,19 +221,22 @@ static void send_empty(libusb_device_handle *handle)
 
 static int send_empty_interrupt(libusb_device_handle *handle)
 {
-    byte_t *packet;
-    int transferred, length = 0;
+    byte_t *packet, *p;
+    int transferred = 0;
     short sent;
 
-    packet = calloc(PACKET_SIZE, 1);
-    sent = libusb_interrupt_transfer(handle, INTR_EP, packet, length,
-                                     &transferred, TIMEOUT);
+    packet = calloc(INTR_LENGTH, 1);
+    sent = libusb_interrupt_transfer(handle, INTR_EP_IN, packet, INTR_LENGTH,
+                                     &transferred, TIMEOUT/100);
     #ifdef DEBUG
-    print_packet(packet, "Empty interrupt:");
+    printf("Empty interrupt:\n");
+    for(p = packet; p < packet+INTR_LENGTH; p++)
+        printf("%02X ", (int)(*p));
+    puts("\n");
     #endif
     free(packet);
-    if(!sent)
-        fprintf(stderr, INTRRPT_ERR_MSG, libusb_strerror(sent));
+    /*if(sent != 0)
+        fprintf(stderr, INTRRPT_ERR_MSG, libusb_strerror(sent));*/
     return sent;
 }
 

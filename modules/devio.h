@@ -49,15 +49,14 @@
 #define DATA_HEADER 0x53
 #define SIZE_HEADER 0x23
 
-#define INTR_EP 0x82
-#define INTR_LENGTH 0
-
+#define INTR_EP_IN 0x82
+#define INTR_LENGTH 8
 
 #define TIMEOUT 1000 /* one second per packet */
 #define BMREQUEST_TYPE_OUT 0x21
-#define BREQUEST_OUT 9
+#define BREQUEST_OUT 0x09
 #define BMREQUEST_TYPE_IN 0xa1
-#define BREQUEST_IN 1
+#define BREQUEST_IN 0x01
 #define WVALUE 0x0300
 #define WINDEX 0x0000
 /* Messages */

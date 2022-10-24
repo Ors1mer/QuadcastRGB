@@ -39,6 +39,12 @@
     if(V) \
         puts(MSG)
 
+#define LIBUSB_FREE_EVERYTHING() \
+    libusb_release_interface(handle, 0); \
+    libusb_release_interface(handle, 1); \
+    libusb_close(handle); \
+    libusb_exit(NULL)
+
 #define VERBOSE1_ARG _("Arguments parsed successfully.")
 #define VERBOSE2_COL _("Assembling data packets.")
 #define VERBOSE3_MIC _("Opening the microphone descriptor.")
@@ -67,8 +73,7 @@ int main(int argc, const char **argv)
     send_startup_packets(handle, data_arr, data_packet_cnt);
     send_packets(handle, data_arr, data_packet_cnt);
     free(data_arr);
-    libusb_close(handle);
-    libusb_exit(NULL);
+    LIBUSB_FREE_EVERYTHING();
     VERBOSE_PRINT(verbose, VERBOSE5_END);
     return 0;
 }
