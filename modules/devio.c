@@ -51,10 +51,7 @@ static int is_micro(libusb_device *dev);
 static int send_header(libusb_device_handle *handle,
                        byte_t op_code, short size);
 static int send_footer(libusb_device_handle *handle);
-static void send_empty(libusb_device_handle *handle);
-static int send_empty_interrupt(libusb_device_handle *handle);
-
-static int send_startup_end_packet(libusb_device_handle *handle);
+static void send_read(libusb_device_handle *handle);
 static int send_data(libusb_device_handle *handle,
                      datpack *data_arr, int pck_cnt);
 static int send_size(libusb_device_handle *handle, int colpairs);
@@ -111,32 +108,6 @@ static int is_micro(libusb_device *dev)
     return 0;
 }
 
-void send_startup_packets(libusb_device_handle *handle, datpack *data_arr,
-                          int pck_cnt)
-{
-    short errcode;
-    int i = 0;
-
-    errcode = send_header(handle, STARTUP_HEADER1, 1);
-    HANDLE_TRANSFER_ERR(errcode);
-    send_empty(handle);
-
-    for(; i < 2; i++) {
-        errcode = send_header(handle, STARTUP_HEADER2, 1);
-        HANDLE_TRANSFER_ERR(errcode);
-        send_empty(handle);
-    }
-
-    errcode = send_header(handle, STARTUP_HEADER3, 1);
-    HANDLE_TRANSFER_ERR(errcode);
-    errcode = send_startup_end_packet(handle);
-    HANDLE_TRANSFER_ERR(errcode);
-
-    errcode = send_footer(handle);
-    HANDLE_TRANSFER_ERR(errcode);
-    send_empty_interrupt(handle); /* timeout error occurs, skipping it */
-}
-
 void send_packets(libusb_device_handle *handle, datpack *data_arr, int pck_cnt)
 {
     short errcode;
@@ -173,13 +144,13 @@ static int send_header(libusb_device_handle *handle,
                                    TIMEOUT);
     #ifdef DEBUG
     print_packet(packet, "Header:");
+    send_read(handle);
     #endif
     free(packet);
     if(sent != PACKET_SIZE) {
         fprintf(stderr, HEADER_ERR_MSG, libusb_strerror(sent));
         return sent;
     }
-    send_empty(handle);
     return 0;
 }
 
@@ -197,47 +168,26 @@ static int send_footer(libusb_device_handle *handle)
                                    TIMEOUT);
     #ifdef DEBUG
     print_packet(packet, "Footer:");
+    send_read(handle);
     #endif
     free(packet);
     if(sent != PACKET_SIZE) {
         fprintf(stderr, FOOTER_ERR_MSG, libusb_strerror(sent));
         return sent;
     }
-    send_empty(handle);
     return 0;
 }
 
-static void send_empty(libusb_device_handle *handle)
+static void send_read(libusb_device_handle *handle)
 {
     byte_t *packet;
     packet = calloc(PACKET_SIZE, 1);
     libusb_control_transfer(handle, BMREQUEST_TYPE_IN, BREQUEST_IN, WVALUE,
                             WINDEX, packet, PACKET_SIZE, TIMEOUT);
     #ifdef DEBUG
-    print_packet(packet, "Empty:");
+    print_packet(packet, "Read:");
     #endif
     free(packet);
-}
-
-static int send_empty_interrupt(libusb_device_handle *handle)
-{
-    byte_t *packet, *p;
-    int transferred = 0;
-    short sent;
-
-    packet = calloc(INTR_LENGTH, 1);
-    sent = libusb_interrupt_transfer(handle, INTR_EP_IN, packet, INTR_LENGTH,
-                                     &transferred, TIMEOUT/100);
-    #ifdef DEBUG
-    printf("Empty interrupt:\n");
-    for(p = packet; p < packet+INTR_LENGTH; p++)
-        printf("%02X ", (int)(*p));
-    puts("\n");
-    #endif
-    free(packet);
-    /*if(sent != 0)
-        fprintf(stderr, INTRRPT_ERR_MSG, libusb_strerror(sent));*/
-    return sent;
 }
 
 static int send_data(libusb_device_handle *handle,
@@ -285,30 +235,6 @@ static int send_size(libusb_device_handle *handle, int colpairs)
         fprintf(stderr, SIZEPCK_ERR_MSG, libusb_strerror(sent));
         return sent;
     }
-    return 0;
-}
-
-static int send_startup_end_packet(libusb_device_handle *handle)
-{
-    byte_t *packet;
-    short sent;
-    packet = calloc(PACKET_SIZE, 1);
-    /* Codes */
-    *(packet+12) = 0xff;
-    *(packet+PACKET_SIZE-2) = 0xaa;
-    *(packet+PACKET_SIZE-1) = 0x55;
-    sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
-                                   WVALUE, WINDEX, packet, PACKET_SIZE,
-                                   TIMEOUT);
-    #ifdef DEBUG
-    print_packet(packet, "Endpacket:");
-    #endif
-    free(packet);
-    if(sent != PACKET_SIZE) {
-        fprintf(stderr, SIZEPCK_ERR_MSG, libusb_strerror(sent));
-        return sent;
-    }
-
     return 0;
 }
 
