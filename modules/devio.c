@@ -51,13 +51,23 @@ static int is_micro(libusb_device *dev);
 static int send_header(libusb_device_handle *handle,
                        byte_t op_code, short size);
 static int send_footer(libusb_device_handle *handle);
-static void send_read(libusb_device_handle *handle);
 static int send_data(libusb_device_handle *handle,
                      datpack *data_arr, int pck_cnt);
 static int send_size(libusb_device_handle *handle, int colpairs);
 
-static void print_packet(byte_t *pck, char *str);
+static void send_save(libusb_device_handle *handle, datpack *data_arr,
+                      int pck_cnt);
+static void send_display(libusb_device_handle *handle, const datpack *data_arr,
+                         int pck_cnt);
+static void display_data_arr(libusb_device_handle *handle,
+                             const byte_t *colcommand, const byte_t *end);
 
+static void send_display_command(libusb_device_handle *handle);
+
+#ifdef DEBUG
+static void print_packet(byte_t *pck, char *str);
+static void send_read(libusb_device_handle *handle);
+#endif
 
 libusb_device_handle *open_micro(datpack *data_arr)
 {
@@ -108,10 +118,22 @@ static int is_micro(libusb_device *dev)
     return 0;
 }
 
-void send_packets(libusb_device_handle *handle, datpack *data_arr, int pck_cnt)
+void send_packets(libusb_device_handle *handle, datpack *data_arr,
+                  int pck_cnt)
+{
+    short commands_cnt;
+    /* Assuming upper and lower counts are equal */
+    commands_cnt = count_color_commands(data_arr, pck_cnt, 0);
+    if(commands_cnt == 1) /* case of solid: write the data to the device */
+        send_save(handle, data_arr, pck_cnt);        
+    else /* case of any other mode: infinite display loop */
+        send_display(handle, data_arr, pck_cnt);
+}
+
+static void send_save(libusb_device_handle *handle, datpack *data_arr,
+                      int pck_cnt)
 {
     short errcode;
-
     errcode = send_header(handle, DATA_HEADER, pck_cnt);
     HANDLE_TRANSFER_ERR(errcode);
     errcode = send_data(handle, data_arr, pck_cnt);
@@ -124,6 +146,59 @@ void send_packets(libusb_device_handle *handle, datpack *data_arr, int pck_cnt)
     HANDLE_TRANSFER_ERR(errcode);
     errcode = send_footer(handle);
     HANDLE_TRANSFER_ERR(errcode);
+}
+
+static void send_display(libusb_device_handle *handle, const datpack *data_arr,
+                         int pck_cnt)
+{
+    short command_cnt;
+    #ifdef DEBUG
+    puts("Entering display mode...");
+    #endif
+
+    command_cnt = count_color_commands(data_arr, pck_cnt, 0);
+    for(;;)
+        display_data_arr(handle, *data_arr, *data_arr+command_cnt);
+}
+
+static void display_data_arr(libusb_device_handle *handle,
+                             const byte_t *colcommand, const byte_t *end)
+{
+    byte_t *packet;
+    short sent;
+    packet = calloc(PACKET_SIZE, 1);
+    while(colcommand < end) {
+        send_display_command(handle);
+        memcpy(packet, colcommand, 2*BYTE_STEP);
+        sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT,
+                   BREQUEST_OUT, WVALUE, WINDEX, packet, PACKET_SIZE, TIMEOUT);
+        #ifdef DEBUG
+        print_packet(packet, "Data:");
+        #endif
+        if(sent != PACKET_SIZE)
+            fprintf(stderr, HEADER_ERR_MSG, libusb_strerror(sent));
+        colcommand += 2*BYTE_STEP;
+        usleep(1000 * 100);
+    }
+    free(packet);
+}
+
+static void send_display_command(libusb_device_handle *handle)
+{
+    byte_t *packet;
+    short sent;
+    packet = calloc(PACKET_SIZE, 1);
+    *packet = 0x04;
+    *(packet+1) = 0xf2;
+    *(packet+8) = 0x01;
+    sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
+                                 WVALUE, WINDEX, packet, PACKET_SIZE, TIMEOUT);
+    #ifdef DEBUG
+    print_packet(packet, "Header display:");
+    #endif
+    free(packet);
+    if(sent != PACKET_SIZE)
+        fprintf(stderr, HEADER_ERR_MSG, libusb_strerror(sent));
 }
 
 static int send_header(libusb_device_handle *handle,
@@ -140,8 +215,7 @@ static int send_header(libusb_device_handle *handle,
 
     /* Do the transfer */
     sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
-                                   WVALUE, WINDEX, packet, PACKET_SIZE,
-                                   TIMEOUT);
+                                 WVALUE, WINDEX, packet, PACKET_SIZE, TIMEOUT);
     #ifdef DEBUG
     print_packet(packet, "Header:");
     send_read(handle);
@@ -176,18 +250,6 @@ static int send_footer(libusb_device_handle *handle)
         return sent;
     }
     return 0;
-}
-
-static void send_read(libusb_device_handle *handle)
-{
-    byte_t *packet;
-    packet = calloc(PACKET_SIZE, 1);
-    libusb_control_transfer(handle, BMREQUEST_TYPE_IN, BREQUEST_IN, WVALUE,
-                            WINDEX, packet, PACKET_SIZE, TIMEOUT);
-    #ifdef DEBUG
-    print_packet(packet, "Read:");
-    #endif
-    free(packet);
 }
 
 static int send_data(libusb_device_handle *handle,
@@ -239,6 +301,18 @@ static int send_size(libusb_device_handle *handle, int colpairs)
 }
 
 #ifdef DEBUG
+static void send_read(libusb_device_handle *handle)
+{
+    byte_t *packet;
+    packet = calloc(PACKET_SIZE, 1);
+    libusb_control_transfer(handle, BMREQUEST_TYPE_IN, BREQUEST_IN, WVALUE,
+                            WINDEX, packet, PACKET_SIZE, TIMEOUT);
+    #ifdef DEBUG
+    print_packet(packet, "Read:");
+    #endif
+    free(packet);
+}
+
 static void print_packet(byte_t *pck, char *str)
 {
     byte_t *p;

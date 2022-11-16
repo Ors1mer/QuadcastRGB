@@ -58,6 +58,6 @@ typedef byte_t datpack[DATA_PACKET_SIZE];
 
 /* Functions */
 datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt);
-short count_color_commands(datpack *data_arr, int pck_cnt, int colgroup);
+short count_color_commands(const datpack *data_arr, int pck_cnt, int colgroup);
 
 #endif

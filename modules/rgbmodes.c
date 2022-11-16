@@ -77,10 +77,10 @@ datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt)
     return data_arr;
 }
 
-short count_color_commands(datpack *data_arr, int pck_cnt, int colgroup)
+short count_color_commands(const datpack *data_arr, int pck_cnt, int colgroup)
 {
     short cnt, step = 0;
-    byte_t *b;
+    const byte_t *b;
     if(colgroup) /* case of lower color commands */
         step = BYTE_STEP;
     cnt = (pck_cnt-1)*8;

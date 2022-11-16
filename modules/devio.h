@@ -30,6 +30,7 @@
 #define DEVIO_SENTRY
 
 #include <libusb-1.0/libusb.h>
+#include <unistd.h> /* for usleep */
 #include "locale_macros.h"
 #include "rgbmodes.h" /* for datpack & byte_t types, count_color_pairs, defs */
 
@@ -69,7 +70,6 @@
 #define HEADER_ERR_MSG _("Header packet error: %s\n")
 #define SIZEPCK_ERR_MSG _("Size packet error: %s\n")
 #define DATAPCK_ERR_MSG _("Data packet error: %s\n")
-#define INTRRPT_ERR_MSG _("Interrupt packet error: %s\n")
 /* Errcodes */
 enum {
     libusberr = 2,
@@ -80,9 +80,6 @@ enum {
 
 /* Functions */
 libusb_device_handle *open_micro(datpack *data_arr);
-void send_startup_packets(libusb_device_handle *handle,
-                          datpack *data_arr, int pck_cnt);
-void send_packets(libusb_device_handle *handle,
-                  datpack *data_arr, int pck_cnt);
-
+void send_packets(libusb_device_handle *handle, datpack *data_arr,
+                  int pck_cnt);
 #endif
