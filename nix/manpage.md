@@ -6,20 +6,24 @@
 quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
 
 # SYNOPSIS
-**quadcastrgb** [-h] [-v] [-a|-u|-l] [-b bright] [-s speed] mode [COLORS]...
+**quadcastrgb** [-h] [-v] [-a|-u|-l] [-b bright] [-s speed] [-d delay] mode [COLORS]...
 
 # DESCRIPTION
 **quadcastrgb** looks for a connected Quadcast S micro, then connects to it and
-changes the rgb mode and colors depending on the given parameters. By default,
-if no error occured writes nothing and finishes successfully, else writes an
-error message to stderr and finishes with an error code.
+changes the rgb mode and colors depending on the given parameters.
+
+There are two possible ways of how the program behaves: writes the color into
+the microphone or becomes a demon process and continuously sends data to the
+device. The first behavior is only done when solid mode is used. Any other mode
+causes the program to become a demon that should be killed with SIGINT once
+the user doesn't need it.
 
 Available modes:  
 - solid  
 - blink  
-- cycle (not supperted yet)  
-- lightning (not supported yet)  
-- wave (not supported yet)  
+- cycle (yet to be done)  
+- lightning (yet to be done)  
+- wave (yet to be done)  
 
 # OPTIONS
 ## General options
@@ -46,8 +50,12 @@ This is the default state, it may be omitted
 specified mode
 
 **-s**
-: Set speed of a gradient/animation, integer 1-10 (5 by
-default). Ignored in solid mode
+: Set speed of a gradient/animation, integer 1-100 (81 by default).
+Ignored in solid mode
+
+**-d**
+: Set delay for the blink mode, integer 1-100 (10 by default).
+Ignored in all other modes
 
 # EXAMPLES
 **quadcastrgb solid**
