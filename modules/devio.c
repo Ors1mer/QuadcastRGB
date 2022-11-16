@@ -45,6 +45,23 @@
         exit(transfererr); \
     }
 
+/* Demonization for send_display */
+#define DEMONIZE() \
+    close(0); \
+    close(1); \
+    close(2); \
+    open("/dev/null", O_RDONLY); \
+    open("/dev/null", O_WRONLY); \
+    open("/dev/null", O_WRONLY); \
+    chdir("/"); \
+    pid = fork(); \
+    if(pid > 0) \
+        exit(0); \
+    setsid(); \
+    pid = fork(); \
+    if(pid > 0) \
+        exit(0)
+
 static libusb_device *dev_search();
 static int is_micro(libusb_device *dev);
 
@@ -152,10 +169,13 @@ static void send_display(libusb_device_handle *handle, const datpack *data_arr,
                          int pck_cnt)
 {
     short command_cnt;
+    int pid;
     #ifdef DEBUG
     puts("Entering display mode...");
     #endif
-
+    #ifndef DEBUG
+    DEMONIZE();
+    #endif
     command_cnt = count_color_commands(data_arr, pck_cnt, 0);
     for(;;)
         display_data_arr(handle, *data_arr, *data_arr+2*BYTE_STEP*command_cnt);
@@ -172,7 +192,6 @@ static void display_data_arr(libusb_device_handle *handle,
         memcpy(packet, colcommand, 2*BYTE_STEP);
         sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT,
                    BREQUEST_OUT, WVALUE, WINDEX, packet, PACKET_SIZE, TIMEOUT);
-
         #ifdef DEBUG
         print_packet(packet, "Data:");
         #endif

@@ -31,6 +31,7 @@
 
 #include <libusb-1.0/libusb.h>
 #include <unistd.h> /* for usleep */
+#include <fcntl.h> /* for demonization */
 #include "locale_macros.h"
 #include "rgbmodes.h" /* for datpack & byte_t types, count_color_pairs, defs */
 
