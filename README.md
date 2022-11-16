@@ -9,15 +9,14 @@ so far.
 - *free software (GPL-2.0-only)*
 - *cross-platform*
 - *cli*
-- *no need to run in the background*
+- *runs as a deamon*
 
 ### Things yet to be done:
 - *the modes: ~solid, blink,~ cycle, lightning, wave*
-- *clear buffer before passing the data*
+- *~clear buffer before passing the data~*
 - *~brightness & speed~*
 - *~delay - **blink**-specific option~*
 - *~actual installation~*
-- *save the previous settings (bloat?)*
 
 ### Examples:
 ```bash
@@ -71,16 +70,15 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="0951", ATTRS{idProduct}=="171f", MODE="0660
 Now the microphone is accessible for the group "hyperrgb". Add your user to the
 group and it's done.
 
-### Problem 4: random unexpected colors are displayed sometimes
-This problem may occur if any mode except solid is used. The solid mode works
-always as expected.
+### Problem 4: launching another instance does nothing
+The problem probably is that the previous instance is still running. Kill it
+with *kill <pid>*.
 
-The problem occurs probably due to the uncleared buffer in the device memory.
-I'm working on the solution right now.
+### How to end the program
+If you launched the program with any mode except solid, you have to kill it
+before launching a new one. It can be done like this:
+```bash
+ps ax | grep quadcastrgb # the first number is going to be the pid
+kill <pid>
+```
 
-Micro is well brick-resistant, so nothing bad will happen anyway.
-
-**Hotfix solutions:**
- - try launching the program several times with the same options (3-4 times typically solves the issue)
- - reconnect the device
- - try other modes/options (solid works well all the time)
