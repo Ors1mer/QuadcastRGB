@@ -1,6 +1,6 @@
-% QUADCASTRGB(1) quadcastrgb 0.1.9
-% Ors1mer <https://gitlab.com/Ors1mer>, <https://github.com/Ors1mer>
-% August 2022
+% QUADCASTRGB(1) quadcastrgb 0.4
+% Ors1mer <ors1mer_dev [[at]] proton.me>
+% 2022 November 17
 
 # NAME
 quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
@@ -95,15 +95,9 @@ the root privileges (not recommended) or creating a dev rule (recommended)
 : Failed to transfer some packets
 
 # CAVEATS
-It isn't possible to edit only one (upper or lower) diode group without
+It isn't possible to setup only one (upper or lower) diode group without
 changing the other. If a mode set to only one diode group, the other is set to
 solid black (i. e. no color).
-
-# BUGS
-If any mode except solid is set, the microphone may display random unexpected
-colors once in a while. This doesn't mean that it is broken in any way as the
-device is well-bricking-protected. The solutions are: try executing the program
-several more times, reconnect the device.
 
 # COPYRIGHT
 Copyright (C) 2022 Ors1mer. License GPLv2: GNU GPL version 2 only

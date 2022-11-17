@@ -9,7 +9,7 @@ so far.
 - *free software (GPL-2.0-only)*
 - *cross-platform*
 - *cli*
-- *runs as a deamon*
+- *runs as a demon*
 
 ### Things yet to be done:
 - *the modes: ~solid, blink,~ cycle, lightning, wave*
