@@ -36,10 +36,12 @@ $${HOME}/%/:
 	mkdir -p $@
 # For modules
 %.o: %.c %.h
-ifneq (quadcastrgb, $(MAKECMDGOALS))
-	$(CC) $(CFLAGS_DEV) -c $< -o $@
-else
+ifeq (quadcastrgb, $(MAKECMDGOALS))
 	$(CC) $(CFLAGS_INS) -c $< -o $@
+else ifeq (install, $(MAKECMDGOALS))
+	$(CC) $(CFLAGS_INS) -c $< -o $@
+else
+	$(CC) $(CFLAGS_DEV) -c $< -o $@
 endif
 
 
