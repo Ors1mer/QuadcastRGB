@@ -71,6 +71,7 @@ int main(int argc, const char **argv)
     /* Send packets */
     VERBOSE_PRINT(verbose, VERBOSE4_PKT);
     send_packets(handle, data_arr, data_packet_cnt);
+    /* Free all memory */
     free(data_arr);
     LIBUSB_FREE_EVERYTHING();
     VERBOSE_PRINT(verbose, VERBOSE5_END);
