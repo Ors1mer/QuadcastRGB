@@ -41,6 +41,9 @@
 #define DATA_PACKET_SIZE 64
 #define BYTE_STEP 4 /* used to skip some part of bytes in a packet */
 #define RGB_CODE 0x81
+
+/* Macros */
+#define DIV_CEIL(X, Y) (((X)/(Y)) + ((X) % (Y) != 0))
 /* Blink random */
 #define MAX_SPD 101
 #define MAX_DLY 100
@@ -48,6 +51,9 @@
 #define RAND_DLY_SEG_MAX 51
 #define RAND_COL_SEG_MIN 5
 #define RAND_DLY_SEG_MIN 2
+/* Cycle */
+#define MIN_CYCL_TR 12
+#define MAX_CYCL_TR 128
 
 /* Messages */
 #define NOSUPPORT_MSG _("The mode not supported yet.\n")

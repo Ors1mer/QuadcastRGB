@@ -26,7 +26,6 @@
 #include "rgbmodes.h"
 
 static int count_data(struct colscheme *colsch);
-static int count_blink_data(struct colscheme *colsch);
 static void fill_data(const struct colscheme *colsch, byte_t *da, int pckcnt);
 static void equalize(int upper_size, int lower_size, datpack *da);
 static void fillup_to(size_t copy_size, byte_t *curr, byte_t *finish);
@@ -35,6 +34,7 @@ static void fillup_to(size_t copy_size, byte_t *curr, byte_t *finish);
 static void sequence_solid(const int *colors, int bright, byte_t *da);
 
 /* Blink */
+static int count_blink_data(struct colscheme *colsch);
 static void sequence_blink_random(int bright, int speed, int dly_seg,
                                   byte_t *da);
 static void sequence_blink(const struct colscheme *colsch, byte_t *da,
@@ -43,6 +43,10 @@ static void blink_segment_fill(int col, int col_seg, int dly_seg, int bright,
                                byte_t **da);
 static void blink_color_fill(int color, int size, int bright, byte_t *da);
 static int random_color();
+
+/* Cycle */
+static int count_cycle_data(struct colscheme *colsch);
+
 
 /* Shared */
 static void write_hexcolor(int color, int bright, byte_t *mem);
@@ -99,6 +103,8 @@ static int count_data(struct colscheme *colsch)
         return 1;
     } else if(strequ(colsch->mode, "blink")) {
         return count_blink_data(colsch);
+    } else if(strequ(colsch->mode, "cycle")) {
+        return count_cycle_data(colsch);
     } else {
         return -1;
     }
@@ -122,9 +128,25 @@ static int count_blink_data(struct colscheme *colsch)
             break;
         }
     }
+    return DIV_CEIL(cnt, COLPAIR_PER_PCT);
+}
 
-    /* Ceil rounding: */
-    return cnt/COLPAIR_PER_PCT + (cnt % COLPAIR_PER_PCT != 0);
+static int count_cycle_data(struct colscheme *colsch)
+{
+    unsigned int color_cnt, size, tr_size;
+
+    for(color_cnt = 0; colsch->colors[color_cnt] != nocolor; color_cnt++)
+        {}
+
+    tr_size = 100 - colsch->spd;
+    /* The size of one transition: */
+    size = MIN_CYCL_TR + (MAX_CYCL_TR - MIN_CYCL_TR)*tr_size/100;
+    size *= color_cnt; /* the size of all colpairs */
+    if(size > MAX_COLPAIR_COUNT) { /* case of overflow: fit in 720 colors */
+        size = ( MIN_CYCL_TR + (MAX_COLPAIR_COUNT/color_cnt - MIN_CYCL_TR)*
+                 tr_size/100 ) * color_cnt;
+    }
+    return DIV_CEIL(size, COLPAIR_PER_PCT);
 }
 
 static void fill_data(const struct colscheme *colsch, byte_t *da, int pckcnt)

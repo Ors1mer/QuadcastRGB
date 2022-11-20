@@ -63,7 +63,8 @@ const char *modes[MODES_CNT] = {
 const int rainbow[RAINBOW_CNT] = {
     0xff0000, 0xff009e, 0xcd00ff,
     0x2b00ff, 0x0068ff, 0x00ffff,
-    0x00ff67, 0x32ff00, 0xceff00
+    0x00ff67, 0x32ff00, 0xceff00,
+    nocolor
 };
 
 /* Functions */
