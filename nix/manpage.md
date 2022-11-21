@@ -1,6 +1,6 @@
-% QUADCASTRGB(1) quadcastrgb 0.4
+% QUADCASTRGB(1) quadcastrgb 0.6
 % Ors1mer <ors1mer_dev [[at]] proton.me>
-% 2022 November 17
+% 2022 November 21
 
 # NAME
 quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
@@ -21,7 +21,7 @@ the user doesn't need it.
 Available modes:  
 - solid  
 - blink  
-- cycle (yet to be done)  
+- cycle  
 - lightning (yet to be done)  
 - wave (yet to be done)  
 

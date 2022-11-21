@@ -12,8 +12,8 @@ so far.
 - *runs as a demon*
 
 ### Things yet to be done:
-- *the modes: ~solid, blink,~ cycle, lightning, wave*
-- *~clear buffer before passing the data~*
+- *the modes: ~solid, blink, cycle,~ lightning, wave*
+- *aur, deb, rpm packages*
 - *~brightness & speed~*
 - *~delay - **blink**-specific option~*
 - *~actual installation~*
@@ -76,9 +76,13 @@ with *kill <pid>*.
 
 ### How to end the program
 If you launched the program with any mode except solid, you have to kill it
-before launching a new one. It can be done like this:
+before launching a new one. You should get the message with the pid after
+launching the program. If not, you can get it like this:
 ```bash
 ps ax | grep quadcastrgb # the first number is going to be the pid
+```
+Finally, kill the process:
+```bash
 kill <pid>
 ```
 
