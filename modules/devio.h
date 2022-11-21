@@ -72,6 +72,7 @@
 #define HEADER_ERR_MSG _("Header packet error: %s\n")
 #define SIZEPCK_ERR_MSG _("Size packet error: %s\n")
 #define DATAPCK_ERR_MSG _("Data packet error: %s\n")
+#define PID_MSG _("Started with pid %d\n")
 /* Errcodes */
 enum {
     libusberr = 2,

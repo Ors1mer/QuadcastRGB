@@ -47,12 +47,6 @@
 
 /* Demonization for send_display */
 #define DEMONIZE() \
-    close(0); \
-    close(1); \
-    close(2); \
-    open("/dev/null", O_RDONLY); \
-    open("/dev/null", O_WRONLY); \
-    open("/dev/null", O_WRONLY); \
     chdir("/"); \
     pid = fork(); \
     if(pid > 0) \
@@ -60,7 +54,15 @@
     setsid(); \
     pid = fork(); \
     if(pid > 0) \
-        exit(0)
+        exit(0); \
+    printf(PID_MSG, getpid()); /* notify the user */ \
+    fflush(stdout); /* force clear of the buffer */ \
+    close(0); \
+    close(1); \
+    close(2); \
+    open("/dev/null", O_RDONLY); \
+    open("/dev/null", O_WRONLY); \
+    open("/dev/null", O_WRONLY)
 
 static libusb_device *dev_search();
 static int is_micro(libusb_device *dev);
