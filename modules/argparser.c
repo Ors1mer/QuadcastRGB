@@ -217,6 +217,8 @@ static void write_default_cols(struct colschemes *cs, int state)
     } else { /* solid, lightning */
         write_int_param(cs->upper.colors, cs->lower.colors,
                         red, state);
+        write_int_param(cs->upper.colors+1, cs->lower.colors+1,
+                        nocolor, state);
     }
 }
 
