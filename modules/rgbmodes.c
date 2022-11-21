@@ -46,6 +46,10 @@ static int random_color();
 
 /* Cycle */
 static int count_cycle_data(struct colscheme *colsch);
+static int get_gradient_length(const int *color, int spd);
+static void sequence_cycle(const int *color, int br, int spd, byte_t *da);
+static void write_gradient(byte_t **da, int start_col, int end_col,
+                           int length);
 
 
 /* Shared */
@@ -139,25 +143,25 @@ static int count_cycle_data(struct colscheme *colsch)
         {}
 
     tr_size = 100 - colsch->spd;
-    /* The size of one transition: */
+    /* The size of one gradient: */
     size = MIN_CYCL_TR + (MAX_CYCL_TR - MIN_CYCL_TR)*tr_size/100;
     size *= color_cnt; /* the size of all colpairs */
-    if(size > MAX_COLPAIR_COUNT) { /* case of overflow: fit in 720 colors */
-        size = ( MIN_CYCL_TR + (MAX_COLPAIR_COUNT/color_cnt - MIN_CYCL_TR)*
-                 tr_size/100 ) * color_cnt;
-    }
+    if(size > MAX_COLPAIR_COUNT) /* case of overflow */
+        return MAX_PCT_COUNT;
     return DIV_CEIL(size, COLPAIR_PER_PCT);
 }
 
 static void fill_data(const struct colscheme *colsch, byte_t *da, int pckcnt)
 {
+    /* TODO: GET RID OF BR PARAMETER */
     if(strequ(colsch->mode, "solid")) {
         sequence_solid(colsch->colors, colsch->br, da);
     } else if(strequ(colsch->mode, "blink")) {
-        if(colsch->colors[0] == nocolor) {
+        if(colsch->colors[0] == nocolor)
             sequence_blink_random(colsch->br, colsch->spd, colsch->dly, da);
-        }
         sequence_blink(colsch, da, pckcnt);
+    } else if(strequ(colsch->mode, "cycle")) {
+        sequence_cycle(colsch->colors, colsch->br, colsch->spd, da);
     }
 }
 
@@ -243,6 +247,63 @@ static void blink_color_fill(int color, int size, int bright, byte_t *da)
     }
 }
 
+static void sequence_cycle(const int *color, int br, int spd, byte_t *da)
+{
+    const int *first_col;
+    int tr_length;
+    first_col = color;
+    tr_length = get_gradient_length(color, spd);
+    for(; *color != nocolor; color++) {
+        int tr_start, tr_end;
+
+        tr_start = *color;
+        if(*(color+1) == nocolor)
+            tr_end = *first_col;
+        else
+            tr_end = *(color+1);
+
+        write_gradient(&da, tr_start, tr_end, tr_length);
+    }
+}
+
+static int get_gradient_length(const int *color, int spd)
+{
+    int color_cnt, tr_size;
+    
+    for(color_cnt = 0; *(color+color_cnt) != nocolor; color_cnt++)
+        {}
+
+    tr_size = MIN_CYCL_TR + (MAX_CYCL_TR - MIN_CYCL_TR)*(100 - spd)/100;
+    if(tr_size*color_cnt > MAX_COLPAIR_COUNT)
+        return MIN_CYCL_TR +
+               (MAX_COLPAIR_COUNT/color_cnt - MIN_CYCL_TR)*(100 - spd)/100;
+    return tr_size;
+}
+
+static void write_gradient(byte_t **da, int start_col, int end_col, int length)
+{
+    byte_t rgb_st[3], rgb_end[3], rgb_curr[3];
+    int shift, i;
+    /* Fill the arrays */
+    for(shift = 16, i = 0; shift >= 0; shift -= 8, i++) {
+        rgb_st[i] = (byte_t)((start_col >> shift) & 0xff);
+        rgb_end[i] = (byte_t)((end_col >> shift) & 0xff);
+        rgb_curr[i] = rgb_st[i]; /* the start is going to be the 1st rgb */
+    }
+    /* Write the transition to *da */
+    for(i = 1; i <= length; i++, *da += BYTE_STEP) {
+        int j;
+        **da = RGB_CODE;
+        (*da)++;
+        for(j = 0; j < 3; j++, (*da)++) {
+            **da = rgb_curr[j]; /* write R, G, or B */
+            /* Alter the first RGB depending on the second and the length */
+            rgb_curr[j] = (int)(rgb_st[j] +
+                          ((float)(i)/(length - 1))*(rgb_end[j] - rgb_st[j]));
+        }
+    }
+}
+
 static int random_color()
 {
     /* Generates a pseudorandom number from 0x1 to 0xffffff */
@@ -253,7 +314,7 @@ static void write_hexcolor(int color, int bright, byte_t *mem)
 {
     int n;
     for(n = 16; n >= 0; n -= 8) {
-        *mem = (byte_t)( (((color >> n) & 0xff)*bright) / 100 );
+        *mem = (byte_t)( ((color >> n) & 0xff)*bright/100 );
         mem++;
     }
 }
