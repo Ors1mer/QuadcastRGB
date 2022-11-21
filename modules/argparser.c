@@ -178,6 +178,9 @@ static void set_mode(const char ***arg_pp, const char **argv_end,
     if(!(cs->upper.mode) || !(cs->lower.mode)) { /* write solid to the other */
         int swap = (state == upper) ? lower : upper; /* state != all */
         write_str_param(&(cs->upper.mode), &(cs->lower.mode), modes[0], swap);
+        write_int_param(cs->upper.colors, cs->lower.colors, black, swap);
+        write_int_param(cs->upper.colors+1, cs->lower.colors+1, nocolor,
+                        swap);
     }
 }
 
@@ -215,10 +218,9 @@ static void write_default_cols(struct colschemes *cs, int state)
         write_int_param(cs->upper.colors, cs->lower.colors,
                         nocolor, state);
     } else { /* solid, lightning */
-        write_int_param(cs->upper.colors, cs->lower.colors,
-                        red, state);
-        write_int_param(cs->upper.colors+1, cs->lower.colors+1,
-                        nocolor, state);
+        write_int_param(cs->upper.colors, cs->lower.colors, red, state);
+        write_int_param(cs->upper.colors+1, cs->lower.colors+1, nocolor,
+                        state);
     }
 }
 
