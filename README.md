@@ -12,7 +12,7 @@ so far.
 - *runs as a demon*
 
 ### Things yet to be done:
-- *the modes: ~solid, blink, cycle,~ lightning, wave*
+- *the modes: ~solid, blink, cycle, wave,~ lightning*
 - *aur, deb, rpm packages*
 - *~brightness & speed~*
 - *~delay - **blink**-specific option~*
@@ -72,12 +72,12 @@ group and it's done.
 
 ### Problem 4: launching another instance does nothing
 The problem probably is that the previous instance is still running. Kill it
-with *kill <pid>*.
+with *kill*.
 
 ### How to end the program
 If you launched the program with any mode except solid, you have to kill it
 before launching a new one. You should get the message with the pid after
-launching the program. If not, you can get it like this:
+launching the program. In case you lost it, you can obtain the pid like this:
 ```bash
 ps ax | grep quadcastrgb # the first number is going to be the pid
 ```
