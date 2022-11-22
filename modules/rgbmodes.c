@@ -26,7 +26,8 @@
 #include "rgbmodes.h"
 
 static int count_data(struct colscheme *colsch);
-static void fill_data(struct colscheme *colsch, byte_t *da, int pckcnt);
+static void fill_data(struct colscheme *colsch, byte_t *da, int pckcnt,
+                      int group);
 static void equalize(int upper_size, int lower_size, datpack *da);
 static void fillup_to(size_t copy_size, byte_t *curr, byte_t *finish);
 static void set_brightness(int *color, int br);
@@ -48,6 +49,8 @@ static void sequence_cycle(const int *color, int spd, byte_t *da);
 static void write_gradient(byte_t **da, int start_col, int end_col,
                            int length);
 /* Wave */
+static void sequence_wave(int *color, int spd, int group, byte_t *da);
+static void wave_array_shift(int *color);
 /* Lightning */
 /* Shared */
 static void write_hexcolor(int color, byte_t *mem);
@@ -71,8 +74,8 @@ datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt)
     *pck_cnt = seq_upper >= seq_lower ? seq_upper : seq_lower;
     data_arr = calloc(sizeof(datpack), *pck_cnt);
 
-    fill_data(&cs->upper, *data_arr, *pck_cnt);
-    fill_data(&cs->lower, *data_arr+BYTE_STEP, *pck_cnt);
+    fill_data(&cs->upper, *data_arr, *pck_cnt, upper);
+    fill_data(&cs->lower, *data_arr+BYTE_STEP, *pck_cnt, lower);
     equalize(seq_upper, seq_lower, data_arr);
 
     #ifdef DEBUG
@@ -104,7 +107,7 @@ static int count_data(struct colscheme *colsch)
         return 1;
     } else if(strequ(colsch->mode, "blink")) {
         return count_blink_data(colsch);
-    } else if(strequ(colsch->mode, "cycle")) {
+    } else if(strequ(colsch->mode, "cycle") || strequ(colsch->mode, "wave")) {
         return count_cycle_data(colsch);
     } else {
         return -1;
@@ -148,7 +151,8 @@ static int count_cycle_data(struct colscheme *colsch)
     return DIV_CEIL(size, COLPAIR_PER_PCT);
 }
 
-static void fill_data(struct colscheme *colsch, byte_t *da, int pckcnt)
+static void fill_data(struct colscheme *colsch, byte_t *da, int pckcnt,
+                      int group)
 {
     set_brightness(colsch->colors, colsch->br);
     if(strequ(colsch->mode, "solid")) {
@@ -156,9 +160,12 @@ static void fill_data(struct colscheme *colsch, byte_t *da, int pckcnt)
     } else if(strequ(colsch->mode, "blink")) {
         if(colsch->colors[0] == nocolor)
             sequence_blink_random(colsch->spd, colsch->dly, da);
-        sequence_blink(colsch, da, pckcnt);
+        else
+            sequence_blink(colsch, da, pckcnt);
     } else if(strequ(colsch->mode, "cycle")) {
         sequence_cycle(colsch->colors, colsch->spd, da);
+    } else if(strequ(colsch->mode, "wave")) {
+        sequence_wave(colsch->colors, colsch->spd, group, da);
     }
 }
 
@@ -310,6 +317,23 @@ static void write_gradient(byte_t **da, int start_col, int end_col, int length)
                           ((float)(i)/(length - 1))*(rgb_end[j] - rgb_st[j]));
         }
     }
+}
+
+static void sequence_wave(int *color, int spd, int group, byte_t *da)
+{
+    if(group == lower)
+        wave_array_shift(color);
+    /* Just do the same as in the Cycle mode */
+    sequence_cycle(color, spd, da);
+}
+
+static void wave_array_shift(int *color)
+{
+    int *tmp, first;
+    first = *color;
+    for(tmp = color; *(tmp+1) != nocolor; tmp++)
+        *(tmp) = *(tmp+1);
+    *(tmp) = first;
 }
 
 static int random_color()

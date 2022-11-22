@@ -43,7 +43,7 @@
 #define RGB_CODE 0x81
 
 /* Macros */
-#define DIV_CEIL(X, Y) (((X)/(Y)) + ((X) % (Y) != 0))
+#define DIV_CEIL(X, Y) (((X)/(Y)) + ((X)%(Y) != 0))
 /* Blink random */
 #define MAX_SPD 101
 #define MAX_DLY 100
