@@ -44,6 +44,7 @@
 
 /* Macros */
 #define DIV_CEIL(X, Y) (((X)/(Y)) + ((X)%(Y) != 0))
+#define SPEED_RANGE(MIN, MAX, SPD) MIN + (MAX - MIN)*(100-SPD)/100
 /* Blink random */
 #define MAX_SPD 101
 #define MAX_DLY 100
@@ -54,6 +55,13 @@
 /* Cycle */
 #define MIN_CYCL_TR 12
 #define MAX_CYCL_TR 128
+/* Lightning */
+#define MIN_LGHT_BL 1
+#define MAX_LGHT_BL 9
+#define MIN_LGHT_UP 3
+#define MAX_LGHT_UP 10
+#define MIN_LGHT_DOWN 21
+#define MAX_LGHT_DOWN 131
 
 /* Messages */
 #define NOSUPPORT_MSG _("The mode not supported yet.\n")

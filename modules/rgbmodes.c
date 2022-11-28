@@ -35,7 +35,7 @@ static void set_brightness(int *color, int br);
 /* Solid */
 static void sequence_solid(const int *colors, byte_t *da);
 /* Blink */
-static int count_blink_data(struct colscheme *colsch);
+static unsigned int count_blink_data(struct colscheme *colsch);
 static void sequence_blink_random(int speed, int dly_seg, byte_t *da);
 static void sequence_blink(const struct colscheme *colsch, byte_t *da,
                            int pckcnt);
@@ -43,7 +43,7 @@ static void blink_segment_fill(int col, int col_seg, int dly_seg, byte_t **da);
 static void blink_color_fill(int color, int size, byte_t *da);
 static int random_color();
 /* Cycle */
-static int count_cycle_data(struct colscheme *colsch);
+static unsigned int count_cycle_data(struct colscheme *colsch);
 static int get_gradient_length(const int *color, int spd);
 static void sequence_cycle(const int *color, int spd, byte_t *da);
 static void write_gradient(byte_t **da, int start_col, int end_col,
@@ -52,8 +52,14 @@ static void write_gradient(byte_t **da, int start_col, int end_col,
 static void sequence_wave(int *color, int spd, int group, byte_t *da);
 static void wave_array_shift(int *color);
 /* Lightning */
+static unsigned int count_lightning_data(struct colscheme *colsch);
+static void sequence_lightning(const int *color, int spd, int group,
+                               byte_t *da);
+
 /* Shared */
 static void write_hexcolor(int color, byte_t *mem);
+static unsigned int colarr_len(const int *arr);
+static unsigned int sizeof_frames(int *color, unsigned int framesize);
 
 #ifdef DEBUG
 static void print_datpack(datpack *da, int pck_cnt);
@@ -109,46 +115,64 @@ static int count_data(struct colscheme *colsch)
         return count_blink_data(colsch);
     } else if(strequ(colsch->mode, "cycle") || strequ(colsch->mode, "wave")) {
         return count_cycle_data(colsch);
+    } else if(strequ(colsch->mode, "lightning")) {
+        return count_lightning_data(colsch);
     } else {
         return -1;
     }
 }
 
-static int count_blink_data(struct colscheme *colsch)
+static unsigned int count_blink_data(struct colscheme *colsch)
 {
-    int cnt = 0;
-    int *col;
+    unsigned int frame, size = 0;
 
     if(colsch->colors[0] == nocolor) { /* case of random colors */
         srand(time(NULL)); /* random seed (must be done only once) */
         return MAX_PCT_COUNT;
     }
 
-    for(col = colsch->colors; *col != nocolor; col++) {
-        cnt += 101-colsch->spd + colsch->dly;
-        if(cnt > MAX_COLPAIR_COUNT) {
-            cnt -= 101-colsch->spd + colsch->dly;
-            *col = nocolor; /* strip the sequence to avoid overflow */
-            break;
-        }
-    }
-    return DIV_CEIL(cnt, COLPAIR_PER_PCT);
+    frame = 101-colsch->spd + colsch->dly;
+    size = sizeof_frames(colsch->colors, frame);
+    return DIV_CEIL(size, COLPAIR_PER_PCT);
 }
 
-static int count_cycle_data(struct colscheme *colsch)
+static unsigned int count_cycle_data(struct colscheme *colsch)
 {
-    unsigned int color_cnt, size, tr_size;
-
-    for(color_cnt = 0; colsch->colors[color_cnt] != nocolor; color_cnt++)
-        {}
-
-    tr_size = 100 - colsch->spd;
+    unsigned int size;
     /* The size of one gradient: */
-    size = MIN_CYCL_TR + (MAX_CYCL_TR - MIN_CYCL_TR)*tr_size/100;
-    size *= color_cnt; /* the size of all colpairs */
+    size = SPEED_RANGE(MIN_CYCL_TR, MAX_CYCL_TR, colsch->spd);
+    /* The size of all colpairs: */
+    size *= colarr_len(colsch->colors); 
     if(size > MAX_COLPAIR_COUNT) /* case of overflow */
         return MAX_PCT_COUNT;
     return DIV_CEIL(size, COLPAIR_PER_PCT);
+}
+
+static unsigned int count_lightning_data(struct colscheme *colsch)
+{
+    unsigned int frame, size = 0;
+    frame = SPEED_RANGE(MIN_LGHT_BL, MAX_LGHT_BL, colsch->spd) +
+            SPEED_RANGE(MIN_LGHT_UP, MAX_LGHT_UP, colsch->spd) +
+            SPEED_RANGE(MIN_LGHT_DOWN, MAX_LGHT_DOWN, colsch->spd);
+    size = sizeof_frames(colsch->colors, frame);
+    return DIV_CEIL(size, COLPAIR_PER_PCT);
+}
+
+static unsigned int sizeof_frames(int *color, unsigned int framesize)
+{
+    unsigned int size = 0;
+    for(; *color != nocolor && size+framesize <= MAX_COLPAIR_COUNT; color++)
+        size += framesize;
+    *color = nocolor; /* strip the array */
+    return size;
+}
+
+static unsigned int colarr_len(const int *arr)
+{
+    unsigned int cnt;
+    for(cnt = 0; *(arr+cnt) != nocolor; cnt++)
+        {}
+    return cnt;
 }
 
 static void fill_data(struct colscheme *colsch, byte_t *da, int pckcnt,
@@ -166,6 +190,8 @@ static void fill_data(struct colscheme *colsch, byte_t *da, int pckcnt,
         sequence_cycle(colsch->colors, colsch->spd, da);
     } else if(strequ(colsch->mode, "wave")) {
         sequence_wave(colsch->colors, colsch->spd, group, da);
+    } else if(strequ(colsch->mode, "lightning")) {
+        sequence_lightning(colsch->colors, colsch->spd, group, da);
     }
 }
 
@@ -205,7 +231,6 @@ static void fillup_to(size_t copy_size, byte_t *curr, byte_t *finish)
         curr += 2*BYTE_STEP;
     }
 }
-
 
 /* Mode-related functions */
 static void sequence_solid(const int *colors, byte_t *da)
@@ -284,9 +309,8 @@ static void sequence_cycle(const int *color, int spd, byte_t *da)
 static int get_gradient_length(const int *color, int spd)
 {
     int color_cnt, tr_size;
-    
-    for(color_cnt = 0; *(color+color_cnt) != nocolor; color_cnt++)
-        {}
+
+    color_cnt = colarr_len(color);
 
     tr_size = MIN_CYCL_TR + (MAX_CYCL_TR - MIN_CYCL_TR)*(100 - spd)/100;
     if(tr_size*color_cnt > MAX_COLPAIR_COUNT)
@@ -334,6 +358,14 @@ static void wave_array_shift(int *color)
     for(tmp = color; *(tmp+1) != nocolor; tmp++)
         *(tmp) = *(tmp+1);
     *(tmp) = first;
+}
+
+static void sequence_lightning(const int *color, int spd, int group,
+                               byte_t *da)
+{
+
+    
+
 }
 
 static int random_color()
