@@ -188,7 +188,6 @@ static void set_colors(const char ***arg_pp, const char **argv_end,
                        int state, struct colschemes *cs)
 {
     if(!is_color(*arg_pp+1, argv_end)) {
-        printf("WTF?\n");
         write_default_cols(cs, state);
     } else {
         int col_cnt = 0;

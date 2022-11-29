@@ -102,6 +102,10 @@ solid black (i. e. no color).
 
 In order for a new instance to work the previous one must be killed.
 
+It is possible to use '#rrggbb' notation for colors, but the '#' must be
+escaped to be parsed successfully by a shell. In order to do this put '\'
+before it: '\#rrggbb', or write the hexcolor in double quotes.
+
 # COPYRIGHT
 Copyright (C) 2022 Ors1mer. License GPLv2: GNU GPL version 2 only
 <https://www.gnu.org/licenses/gpl-2.0.en.html>.
