@@ -188,13 +188,19 @@ static void set_colors(const char ***arg_pp, const char **argv_end,
                        int state, struct colschemes *cs)
 {
     if(!is_color(*arg_pp+1, argv_end)) {
+        printf("WTF?\n");
         write_default_cols(cs, state);
     } else {
         int col_cnt = 0;
 
         do {
+            int hexnum;
             (*arg_pp)++;
-            int hexnum = (int)strtol(**arg_pp, NULL, 16);
+            if(***arg_pp == '#')
+                hexnum = (int)strtol(**arg_pp+1, NULL, 16);
+            else
+                hexnum = (int)strtol(**arg_pp, NULL, 16);
+
             write_int_param(&(cs->upper.colors[col_cnt]),
                             &(cs->lower.colors[col_cnt]), hexnum, state);
             col_cnt++;
@@ -226,6 +232,8 @@ static void write_default_cols(struct colschemes *cs, int state)
 
 static int ishexnumber(const char *str)
 {
+    if(*str == '#') /* include the "#RRGGBB" notation */
+        str++;
     for(; *str; str++) {
         if(!(*str>='0' && *str<='9') && !(*str>='A' && *str<'G') &&
                                         !(*str>='a' && *str<'g')) {
@@ -237,5 +245,6 @@ static int ishexnumber(const char *str)
 
 static int is_color(const char **arg_p, const char **argv_end)
 {
-    return (arg_p <= argv_end && ishexnumber(*arg_p));
+    return (arg_p <= argv_end && (ishexnumber(*arg_p)));
 }
+
