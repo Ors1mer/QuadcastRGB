@@ -1,4 +1,4 @@
-% QUADCASTRGB(1) quadcastrgb 0.9
+% QUADCASTRGB(1) quadcastrgb 0.95
 % Ors1mer <ors1mer_dev [[at]] proton.me>
 % 2022 November 29
 
@@ -24,6 +24,7 @@ Available modes:
 - cycle  
 - wave  
 - lightning  
+- pulse
 
 # OPTIONS
 ## General options

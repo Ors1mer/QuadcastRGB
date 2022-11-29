@@ -5,6 +5,8 @@ microphone HyperX Quadcast S just like NGenuity does. Should support all
 platforms, Unix-like preferably. Only Linux and partially FreeBSD were tested
 so far.
 
+Available modes are *solid, blink, cycle, wave, lightning, and pulse*.
+
 ### Features:
 - *free software (GPL-2.0-only)*
 - *cross-platform*
@@ -12,10 +14,10 @@ so far.
 - *daemon*
 
 ### Things yet to be done:
+- ***refuse to work if another instance is running***
 - *aur, deb, rpm packages*
 - *several microphones support*
-- *refuse to work if another instance is running*
-- *extra modes: pulse, visualizer*
+- *extra modes: ~pulse,~ visualizer*
 - *~the original modes: solid, blink, cycle, wave, lightning~*
 - *~brightness & speed~*
 - *~delay - **blink**-specific option~*
