@@ -40,7 +40,7 @@ static void sequence_blink_random(int speed, int dly_seg, byte_t *da);
 static void sequence_blink(const struct colscheme *colsch, byte_t *da,
                            int pckcnt);
 static void blink_segment_fill(int col, int col_seg, int dly_seg, byte_t **da);
-static void blink_color_fill(int color, int size, byte_t *da);
+static void color_fill(int color, int size, byte_t **da);
 static int random_color();
 /* Cycle */
 static unsigned int count_cycle_data(struct colscheme *colsch);
@@ -55,6 +55,7 @@ static void wave_array_shift(int *color);
 static unsigned int count_lightning_data(struct colscheme *colsch);
 static void sequence_lightning(const int *color, int spd, int group,
                                byte_t *da);
+static int next_gradient_color(int color, int endcolor, unsigned int size);
 
 /* Shared */
 static void write_hexcolor(int color, byte_t *mem);
@@ -271,20 +272,8 @@ static void sequence_blink(const struct colscheme *colsch, byte_t *da,
 
 static void blink_segment_fill(int col, int col_seg, int dly_seg, byte_t **da)
 {
-    blink_color_fill(col, col_seg, *da);
-    *da += 2*BYTE_STEP*col_seg;
-    blink_color_fill(black, dly_seg, *da);
-    *da += 2*BYTE_STEP*dly_seg;
-}
-
-static void blink_color_fill(int color, int size, byte_t *da)
-{
-    int i = 0;
-    for(; i < size; i++) {
-        *da = RGB_CODE;
-        write_hexcolor(color, da+1);
-        da += 2*BYTE_STEP;
-    }
+    color_fill(col, col_seg, da);
+    color_fill(black, dly_seg, da);
 }
 
 static void sequence_cycle(const int *color, int spd, byte_t *da)
@@ -363,9 +352,35 @@ static void wave_array_shift(int *color)
 static void sequence_lightning(const int *color, int spd, int group,
                                byte_t *da)
 {
+    unsigned int bl_size, up, down; /* the sizes of sections */
+    bl_size = SPEED_RANGE(MIN_LGHT_BL, MAX_LGHT_BL, spd);
+    up = SPEED_RANGE(MIN_LGHT_UP, MAX_LGHT_UP, spd);
+    down = SPEED_RANGE(MIN_LGHT_DOWN, MAX_LGHT_DOWN, spd);
+    for(; *color != nocolor; color++) {
+        if(group == lower)
+            color_fill(black, bl_size, &da);
+        write_gradient(&da, black, *color, up);
+        write_gradient(&da, next_gradient_color(*color, black, down), black,
+                       down);
+        if(group == upper)
+            color_fill(black, bl_size, &da);
+    }
+}
 
-    
-
+static int next_gradient_color(int color, int endcolor, unsigned int size)
+{
+    byte_t rgb[3], rgb_end[3];
+    int shift, i, nextcolor = 0;
+    for(shift = 16, i = 0; shift >= 0; shift -= 8, i++) {
+        /* Get R, G, or B values */
+        rgb[i] = (byte_t)((color >> shift) & 0xff);
+        rgb_end[i] = (byte_t)((endcolor >> shift) & 0xff);
+        /* Perform one step */
+        rgb[i] = (int)(rgb[i] +
+                 ((float)(1)/(size - 1))*(rgb_end[i] - rgb[i]));
+        nextcolor += (int)(rgb[i] << shift);
+    }
+    return nextcolor;
 }
 
 static int random_color()
@@ -380,6 +395,14 @@ static void write_hexcolor(int color, byte_t *mem)
     for(n = 16; n >= 0; n -= 8) {
         *mem = (byte_t)((color >> n) & 0xff);
         mem++;
+    }
+}
+
+static void color_fill(int color, int size, byte_t **da)
+{
+    for(; size > 0; size--, *da += 2*BYTE_STEP) {
+        **da = RGB_CODE;
+        write_hexcolor(color, (*da)+1);
     }
 }
 
