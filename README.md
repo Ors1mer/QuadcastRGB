@@ -9,11 +9,14 @@ so far.
 - *free software (GPL-2.0-only)*
 - *cross-platform*
 - *cli*
-- *runs as a demon*
+- *daemon*
 
 ### Things yet to be done:
-- *the modes: ~solid, blink, cycle, wave,~ lightning*
 - *aur, deb, rpm packages*
+- *several microphones support*
+- *refuse to work if another instance is running*
+- *extra modes: pulse, visualizer*
+- *~the original modes: solid, blink, cycle, wave, lightning~*
 - *~brightness & speed~*
 - *~delay - **blink**-specific option~*
 - *~actual installation~*
@@ -70,19 +73,13 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="0951", ATTRS{idProduct}=="171f", MODE="0660
 Now the microphone is accessible for the group "hyperrgb". Add your user to the
 group and it's done.
 
-### Problem 4: launching another instance does nothing
+### Problem 4: launching the program a second time does nothing
 The problem probably is that the previous instance is still running. Kill it
-with *kill*.
+with *kill* or *killall*.
 
 ### How to end the program
-If you launched the program with any mode except solid, you have to kill it
-before launching a new one. You should get the message with the pid after
-launching the program. In case you lost it, you can obtain the pid like this:
+Simply kill the process by name:
 ```bash
-ps ax | grep quadcastrgb # the first number is going to be the pid
-```
-Finally, kill the process:
-```bash
-kill <pid>
+killall quadcastrgb
 ```
 

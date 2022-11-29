@@ -1,6 +1,6 @@
-% QUADCASTRGB(1) quadcastrgb 0.8
+% QUADCASTRGB(1) quadcastrgb 0.9
 % Ors1mer <ors1mer_dev [[at]] proton.me>
-% 2022 November 22
+% 2022 November 29
 
 # NAME
 quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
@@ -13,17 +13,17 @@ quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
 changes the rgb mode and colors depending on the given parameters.
 
 There are two possible ways of how the program behaves: writes the color into
-the microphone or becomes a demon process and continuously sends data to the
-device. The first behavior is only done when solid mode is used. Any other mode
-causes the program to become a demon that should be killed with SIGINT once
-the user doesn't need it.
+the microphone or becomes a daemon and continuously sends data to the device.
+The first behavior is only done when solid mode is used. Any other mode causes
+the program to become a demon that should be killed with SIGINT once the user
+doesn't need it.
 
 Available modes:  
 - solid  
 - blink  
 - cycle  
 - wave  
-- lightning (yet to be done)  
+- lightning  
 
 # OPTIONS
 ## General options
@@ -98,6 +98,8 @@ the root privileges (not recommended) or creating a dev rule (recommended)
 It isn't possible to setup only one (upper or lower) diode group without
 changing the other. If a mode set to only one diode group, the other is set to
 solid black (i. e. no color).
+
+In order for a new instance to work the previous one must be killed.
 
 # COPYRIGHT
 Copyright (C) 2022 Ors1mer. License GPLv2: GNU GPL version 2 only
