@@ -51,10 +51,10 @@ static void write_gradient(byte_t **da, int start_col, int end_col,
 /* Wave */
 static void sequence_wave(int *color, int spd, int group, byte_t *da);
 static void wave_array_shift(int *color);
-/* Lightning */
+/* Lightning & Pulse */
 static unsigned int count_lightning_data(struct colscheme *colsch);
 static void sequence_lightning(const int *color, int spd, int group,
-                               byte_t *da);
+                               int synchronous, byte_t *da);
 static int next_gradient_color(int color, int endcolor, unsigned int size);
 
 /* Shared */
@@ -116,7 +116,8 @@ static int count_data(struct colscheme *colsch)
         return count_blink_data(colsch);
     } else if(strequ(colsch->mode, "cycle") || strequ(colsch->mode, "wave")) {
         return count_cycle_data(colsch);
-    } else if(strequ(colsch->mode, "lightning")) {
+    } else if(strequ(colsch->mode, "lightning") ||
+              strequ(colsch->mode, "pulse")) {
         return count_lightning_data(colsch);
     } else {
         return -1;
@@ -192,7 +193,9 @@ static void fill_data(struct colscheme *colsch, byte_t *da, int pckcnt,
     } else if(strequ(colsch->mode, "wave")) {
         sequence_wave(colsch->colors, colsch->spd, group, da);
     } else if(strequ(colsch->mode, "lightning")) {
-        sequence_lightning(colsch->colors, colsch->spd, group, da);
+        sequence_lightning(colsch->colors, colsch->spd, group, 0, da);
+    } else if(strequ(colsch->mode, "pulse")) {
+        sequence_lightning(colsch->colors, colsch->spd, group, 1, da);
     }
 }
 
@@ -350,19 +353,19 @@ static void wave_array_shift(int *color)
 }
 
 static void sequence_lightning(const int *color, int spd, int group,
-                               byte_t *da)
+                               int synchronous, byte_t *da)
 {
     unsigned int bl_size, up, down; /* the sizes of sections */
     bl_size = SPEED_RANGE(MIN_LGHT_BL, MAX_LGHT_BL, spd);
     up = SPEED_RANGE(MIN_LGHT_UP, MAX_LGHT_UP, spd);
     down = SPEED_RANGE(MIN_LGHT_DOWN, MAX_LGHT_DOWN, spd);
     for(; *color != nocolor; color++) {
-        if(group == lower)
+        if(group == lower && !synchronous)
             color_fill(black, bl_size, &da);
         write_gradient(&da, black, *color, up);
         write_gradient(&da, next_gradient_color(*color, black, down), black,
                        down);
-        if(group == upper)
+        if(group == upper || synchronous)
             color_fill(black, bl_size, &da);
     }
 }

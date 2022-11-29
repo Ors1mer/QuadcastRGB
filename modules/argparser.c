@@ -58,9 +58,9 @@ WRITE_PARAM(const char *, write_str_param);
 
 /* Const arrays */
 const char *modes[MODES_CNT] = {
-    "solid", "blink", "cycle", "lightning", "wave"
+    "solid", "blink", "cycle", "wave", "lightning", "pulse", "visualizer"
 };
-const int rainbow[RAINBOW_CNT] = {
+static const int rainbow[RAINBOW_CNT] = {
     0xff0000, 0xff009e, 0xcd00ff,
     0x2b00ff, 0x0068ff, 0x00ffff,
     0x00ff67, 0x32ff00, 0xceff00,
@@ -208,7 +208,7 @@ static void set_colors(const char ***arg_pp, const char **argv_end,
 static void write_default_cols(struct colschemes *cs, int state)
 {
     const char *md = (state == upper) ? cs->upper.mode : cs->lower.mode;
-    if(strequ(md, modes[2]) || strequ(md, modes[4])) { /* cycle or wave */
+    if(strequ(md, modes[2]) || strequ(md, modes[3])) { /* cycle or wave */
         int i;
         for(i = 0; i < RAINBOW_CNT; i++) {
             write_int_param(&(cs->upper.colors[i]), &(cs->lower.colors[i]),
@@ -217,7 +217,7 @@ static void write_default_cols(struct colschemes *cs, int state)
     } else if(strequ(md, modes[1])) { /* blink */
         write_int_param(cs->upper.colors, cs->lower.colors,
                         nocolor, state);
-    } else { /* solid, lightning */
+    } else { /* solid, lightning, pulse */
         write_int_param(cs->upper.colors, cs->lower.colors, red, state);
         write_int_param(cs->upper.colors+1, cs->lower.colors+1, nocolor,
                         state);

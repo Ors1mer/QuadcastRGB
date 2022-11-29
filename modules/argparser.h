@@ -37,7 +37,7 @@
 
 /* Constants */
 #define COLORS_CNT 11
-#define MODES_CNT 5
+#define MODES_CNT 7
 #define RAINBOW_CNT 10
 #define MAX_BR_SPD_DLY 100
 #define SPD_DEFAULT 81
