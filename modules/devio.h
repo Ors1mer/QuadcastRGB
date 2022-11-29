@@ -84,5 +84,5 @@ enum {
 /* Functions */
 libusb_device_handle *open_micro(datpack *data_arr);
 void send_packets(libusb_device_handle *handle, datpack *data_arr,
-                  int pck_cnt);
+                  int pck_cnt, int verbose);
 #endif

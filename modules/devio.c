@@ -45,25 +45,6 @@
         exit(transfererr); \
     }
 
-/* Demonization for send_display */
-#define DEMONIZE() \
-    chdir("/"); \
-    pid = fork(); \
-    if(pid > 0) \
-        exit(0); \
-    setsid(); \
-    pid = fork(); \
-    if(pid > 0) \
-        exit(0); \
-    printf(PID_MSG, getpid()); /* notify the user */ \
-    fflush(stdout); /* force clear of the buffer */ \
-    close(0); \
-    close(1); \
-    close(2); \
-    open("/dev/null", O_RDONLY); \
-    open("/dev/null", O_WRONLY); \
-    open("/dev/null", O_WRONLY)
-
 static libusb_device *dev_search();
 static int is_micro(libusb_device *dev);
 
@@ -78,10 +59,13 @@ static short send_display_command(libusb_device_handle *handle);
 static void send_save(libusb_device_handle *handle, datpack *data_arr,
                       int pck_cnt);
 static void send_display(libusb_device_handle *handle, const datpack *data_arr,
-                         int pck_cnt);
+                         int pck_cnt, int verbose);
 static void display_data_arr(libusb_device_handle *handle,
                              const byte_t *colcommand, const byte_t *end);
 
+#ifndef DEBUG
+static void daemonize(int verbose);
+#endif
 #ifdef DEBUG
 static void print_packet(byte_t *pck, char *str);
 static void send_read(libusb_device_handle *handle);
@@ -147,7 +131,7 @@ static int is_micro(libusb_device *dev)
 }
 
 void send_packets(libusb_device_handle *handle, datpack *data_arr,
-                  int pck_cnt)
+                  int pck_cnt, int verbose)
 {
     short commands_cnt;
     /* Assuming upper and lower counts are equal */
@@ -155,7 +139,7 @@ void send_packets(libusb_device_handle *handle, datpack *data_arr,
     if(commands_cnt == 1) /* case of solid: write the data to the device */
         send_save(handle, data_arr, pck_cnt);        
     else /* case of any other mode: display loop until signal received */
-        send_display(handle, data_arr, pck_cnt);
+        send_display(handle, data_arr, pck_cnt, verbose);
 }
 
 static void send_save(libusb_device_handle *handle, datpack *data_arr,
@@ -177,15 +161,14 @@ static void send_save(libusb_device_handle *handle, datpack *data_arr,
 }
 
 static void send_display(libusb_device_handle *handle, const datpack *data_arr,
-                         int pck_cnt)
+                         int pck_cnt, int verbose)
 {
     short command_cnt;
-    int pid;
     #ifdef DEBUG
     puts("Entering display mode...");
     #endif
     #ifndef DEBUG
-    DEMONIZE();
+    daemonize(verbose);
     #endif
     command_cnt = count_color_commands(data_arr, pck_cnt, 0);
     signal(SIGTERM, nonstop_reset_handler);
@@ -194,6 +177,32 @@ static void send_display(libusb_device_handle *handle, const datpack *data_arr,
     while(nonstop)
         display_data_arr(handle, *data_arr, *data_arr+2*BYTE_STEP*command_cnt);
 }
+
+#ifndef DEBUG
+static void daemonize(int verbose)
+{
+    int pid;
+
+    chdir("/");
+    pid = fork();
+    if(pid > 0)
+        exit(0);
+    setsid();
+    pid = fork();
+    if(pid > 0)
+        exit(0);
+
+    if(verbose)
+        printf(PID_MSG, getpid()); /* notify the user */
+    fflush(stdout); /* force clear of the buffer */
+    close(0);
+    close(1);
+    close(2);
+    open("/dev/null", O_RDONLY);
+    open("/dev/null", O_WRONLY);
+    open("/dev/null", O_WRONLY);
+}
+#endif
 
 static void display_data_arr(libusb_device_handle *handle,
                              const byte_t *colcommand, const byte_t *end)
