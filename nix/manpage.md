@@ -1,9 +1,9 @@
 % QUADCASTRGB(1) quadcastrgb 0.95
 % Ors1mer <ors1mer_dev [[at]] proton.me>
-% 2022 November 29
+% 2022 November 30
 
 # NAME
-quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
+quadcastrgb - set RGB mode for the microphone HyperX Quadcast S
 
 # SYNOPSIS
 **quadcastrgb** [-h] [-v] [-a|-u|-l] [-b bright] [-s speed] [-d delay] mode [COLORS]...
@@ -15,8 +15,8 @@ changes the rgb mode and colors depending on the given parameters.
 There are two possible ways of how the program behaves: writes the color into
 the microphone or becomes a daemon and continuously sends data to the device.
 The first behavior is only done when solid mode is used. Any other mode causes
-the program to become a demon that should be killed with SIGINT once the user
-doesn't need it.
+the program to become a daemon that should be killed with SIGTERM or SIGINT
+once the user doesn't need it.
 
 Available modes:  
 - solid  
@@ -90,7 +90,8 @@ lightning for the lower
 
 **4**
 : Failed to open the microphone descriptor. Consider running the program with
-the root privileges (not recommended) or creating a dev rule (recommended)
+the root privileges or creating a dev rule. Also, stop all programs that might
+use the device
 
 **5**
 : Failed to transfer some packets

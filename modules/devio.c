@@ -29,6 +29,7 @@
 #define FREE_AND_EXIT() \
     libusb_free_device_list(devs, 1); \
     free(data_arr); \
+    libusb_exit(NULL); \
     exit(libusberr)
 
 #define HANDLE_ERR(CONDITION, MSG) \
@@ -41,6 +42,7 @@
     if(ERRCODE) { \
         fprintf(stderr, TRANSFER_ERR_MSG); \
         libusb_close(handle); \
+        libusb_exit(NULL); \
         free(data_arr); \
         exit(transfererr); \
     }
@@ -190,6 +192,7 @@ static void send_display(libusb_device_handle *handle, const datpack *data_arr,
     daemonize(verbose);
     #endif
     command_cnt = count_color_commands(data_arr, pck_cnt, 0);
+    signal(SIGINT, nonstop_reset_handler);
     signal(SIGTERM, nonstop_reset_handler);
     /* The loop works until a signal handler resets the variable */
     nonstop = 1; /* set to 1 only here */
