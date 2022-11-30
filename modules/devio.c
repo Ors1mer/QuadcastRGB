@@ -45,9 +45,11 @@
         exit(transfererr); \
     }
 
+/* Microphone opening */
+static int claim_dev_interface(libusb_device_handle *handle);
 static libusb_device *dev_search();
 static int is_micro(libusb_device *dev);
-
+/* Packet transfer */
 static int send_header(libusb_device_handle *handle,
                        byte_t op_code, short size);
 static int send_footer(libusb_device_handle *handle);
@@ -88,7 +90,6 @@ libusb_device_handle *open_micro(datpack *data_arr)
     libusb_device_handle *handle;
     ssize_t dev_count;
     short errcode;
-
     errcode = libusb_init(NULL);
     if(errcode) {
         perror("libusb_init");
@@ -100,14 +101,32 @@ libusb_device_handle *open_micro(datpack *data_arr)
     HANDLE_ERR(!micro_dev, NODEV_ERR_MSG);
     errcode = libusb_open(micro_dev, &handle);
     if(errcode) {
-        fprintf(stderr, N_("%s\n%s"), libusb_strerror(errcode), OPEN_ERR_MSG);
+        fprintf(stderr, "%s\n%s", libusb_strerror(errcode), OPEN_ERR_MSG);
         FREE_AND_EXIT();
     }
+    errcode = claim_dev_interface(handle);
+    if(errcode) {
+        libusb_close(handle); FREE_AND_EXIT();
+    }
     libusb_free_device_list(devs, 1);
-    libusb_set_auto_detach_kernel_driver(handle, 1);
-    libusb_claim_interface(handle, 0);
-    libusb_claim_interface(handle, 1);
     return handle;
+}
+
+static int claim_dev_interface(libusb_device_handle *handle)
+{
+    int errcode0, errcode1;
+    libusb_set_auto_detach_kernel_driver(handle, 1); /* might be unsupported */
+    errcode0 = libusb_claim_interface(handle, 0);
+    errcode1 = libusb_claim_interface(handle, 1);
+    if(errcode0 == LIBUSB_ERROR_BUSY || errcode1 == LIBUSB_ERROR_BUSY) {
+        fprintf(stderr, BUSY_ERR_MSG);
+        return 1;
+    } else if(errcode0 == LIBUSB_ERROR_NO_DEVICE ||
+                                          errcode1 == LIBUSB_ERROR_NO_DEVICE) {
+        fprintf(stderr, OPEN_ERR_MSG);
+        return 1;
+    }
+    return 0;
 }
 
 static libusb_device *dev_search(libusb_device **devs, ssize_t cnt)

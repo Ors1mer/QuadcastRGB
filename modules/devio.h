@@ -66,6 +66,8 @@
 #define DEVLIST_ERR_MSG _("Couldn't get the list of USB devices.\n")
 #define NODEV_ERR_MSG _("HyperX Quadcast S isn't connected.\n")
 #define OPEN_ERR_MSG _("Couldn't open the microphone.\n")
+#define BUSY_ERR_MSG _("Another program is using the microphone already. " \
+                       "Stopping.\n")
 #define TRANSFER_ERR_MSG _("Couldn't transfer a packet! " \
                            "The device might be busy.\n")
 #define FOOTER_ERR_MSG _("Footer packet error: %s\n")
