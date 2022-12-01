@@ -50,6 +50,10 @@ Check the dependencies:
  - gcc v12.2.0 OR clang v14.0.6 (most versions should do fine)
  - libusb-1.0 v1.0.26
  - gettext v0.21-2
+ - glibc
+ - libudev
+ - libatomic
+ - libgcc_s
 
 ### Problem 2: command not found
 Check the $PATH and manpath. The program follows XDG specifications, so the
