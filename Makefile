@@ -32,7 +32,7 @@ quadcastrgb: main.c $(OBJMODULES)
 
 
 # For directories
-$${HOME}/%/:
+%/:
 	mkdir -p $@
 # For modules
 %.o: %.c %.h
