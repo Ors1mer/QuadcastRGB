@@ -15,7 +15,7 @@ program runs as a daemon for each of these modes except *solid*.
 - *daemon*
 
 ### Things yet to be done:
-- *aur, deb, rpm packages*
+- *~aur,~ deb, rpm packages*
 - *several microphones support*
 - *extra modes: ~pulse,~ visualizer*
 - *~refuse to work if another instance is running~*
@@ -37,13 +37,37 @@ quadcastrgb -u solid 4c0099 -l solid ff6000
 # Default cycle mode for the upper diode with 50% brightness and yellow lightning for the lower:
 quadcastrgb -u -b 50 cycle -l lightning ff6000 
 ```
+
 ## Install
+### Arch
+QuadcastRGB is available in the AUR.
+#### Install with yay
+```bash
+yay -S quadcastrgb
+```
+#### Build on your own
+Firstly, obtain the aur/PKGBUILD file and put it into an empty directory.
+E. g. run:
+```bash
+mkdir quadcastrgb && cd quadcastrgb
+wget https://gitlab.com/Ors1mer/QuadcastRGB/-/raw/main/aur/PKGBUILD
+```
+Then build & install the package:
+```bash
+makepkg -sri
+```
+Finally, a clean-up:
+```bash
+cd .. && rm -rf quadcastrgb
+```
+
 ### Compiling from source
 If you are lucky, this should be enough:
 ```bash
 make install # for linux
 gmake install OS=freebsd # for freebsd
 ```
+
 ## Basic problems during&after Install
 ### Problem 1: make failed
 Check the dependencies:  
@@ -51,9 +75,7 @@ Check the dependencies:
  - libusb-1.0 v1.0.26
  - gettext v0.21-2
  - glibc
- - libudev
- - libatomic
- - libgcc_s
+ - gcc-libs
 
 ### Problem 2: command not found
 Check the $PATH and manpath. The program follows XDG specifications, so the
