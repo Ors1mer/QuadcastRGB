@@ -62,10 +62,24 @@ dpkg -i quadcastrgb-1.0.0-1-amd64.deb
 ```
 Alternatively, it is possible to make a deb package of your own:
 ```bash
-git clone https://gitlab.com/Ors1mer/QuadcastRGB
+git clone https://gitlab.com/Ors1mer/QuadcastRGB.git
 cd QuadcastRGB
 make debpkg # build the package with dpkg
 dpkg -i deb/quadcastrgb-1.0.0-1-amd64.deb # install
+```
+
+## RPM-based distro
+Everything is pretty much the same as for deb. Simply download and install:
+```bash
+wget https://gitlab.com/Ors1mer/QuadcastRGB/-/raw/main/rpm/quadcastrgb-1.0.0-1.x86_64.rpm
+rpm -ivh quadcastrgb-1.0.0-1.x86_64.rpm
+```
+Or build the package from source:
+```bash
+git clone https://gitlab.com/Ors1mer/QuadcastRGB.git
+cd QuadcastRGB
+make rpmpkg # build the package in ~/rpmbuild/
+rpm -ivh ~/rpmbuild/RPMS/x86_64/quadcastrgb-1.0.0-1.x86_64.rpm
 ```
 
 ## Compiling from source

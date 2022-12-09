@@ -15,11 +15,11 @@ MANPATH = nix/quadcastrgb.1
 BINDIR_INS = $${HOME}/.local/bin/
 MANDIR_INS = $${HOME}/.local/share/man/man1/
 
-# Deb packaging
+# Packaging
+BINVER = 1.0.0
 DEBPKGVER = 1
-DEBBINVER = 1.0.0
 DEBARCH = amd64
-DEBNAME = quadcastrgb-$(DEBBINVER)-$(DEBPKGVER)-$(DEBARCH)
+DEBNAME = quadcastrgb-$(BINVER)-$(DEBPKGVER)-$(DEBARCH)
 
 # System-dependent part
 ifeq ($(OS),freebsd)
@@ -48,6 +48,8 @@ else ifeq (install, $(MAKECMDGOALS))
 	$(CC) $(CFLAGS_INS) -c $< -o $@
 else ifeq (debpkg, $(MAKECMDGOALS))
 	$(CC) $(CFLAGS_INS) -c $< -o $@
+else ifeq (rpmpkg, $(MAKECMDGOALS))
+	$(CC) $(CFLAGS_INS) -c $< -o $@
 else
 	$(CC) $(CFLAGS_DEV) -c $< -o $@
 endif
@@ -71,6 +73,15 @@ debpkg: quadcastrgb
 	cp $(BINPATH) deb/$(DEBNAME)/usr/bin/quadcastrgb
 	cp $(MANPATH).gz deb/$(DEBNAME)/usr/share/man/man1
 	dpkg --build deb/$(DEBNAME)
+
+rpmpkg: main.c $(SRCMODULES)
+	rpmdev-setuptree
+	cp -r main.c Makefile nix modules $${HOME}/rpmbuild/BUILD/
+	cp rpm/quadcastrgb.spec $${HOME}/rpmbuild/SPECS/
+	tar -zcf $${HOME}/rpmbuild/SOURCES/quadcastrgb-${BINVER}.tgz .
+	rpmbuild --ba $${HOME}/rpmbuild/SPECS/quadcastrgb.spec
+
+
 
 ifneq (clean, $(MAKECMDGOALS))
 -include deps.mk
