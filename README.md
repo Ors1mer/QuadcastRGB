@@ -15,9 +15,9 @@ program runs as a daemon for each of these modes except *solid*.
 - *daemon*
 
 ## Things yet to be done:
-- *~aur, deb,~ rpm packages*
 - *several microphones support*
 - *extra modes: ~pulse,~ visualizer*
+- *~aur, deb, rpm packages~*
 - *~refuse to work if another instance is running~*
 - *~the original modes: solid, blink, cycle, wave, lightning~*
 - *~brightness & speed~*
