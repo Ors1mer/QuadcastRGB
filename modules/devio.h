@@ -37,8 +37,14 @@
 #include "rgbmodes.h" /* for datpack & byte_t types, count_color_pairs, defs */
 
 /* Constants */
-#define DEV_VID 0x0951 /* vendor ID */
-#define DEV_PID 0x171f /* product ID */
+/* Vendor IDs (region dependent) */
+#define DEV_VID_NA 0x0951
+#define DEV_VID_EU 0x03f0
+/* Product IDs */
+#define DEV_PID_NA 0x171f /* product ID */
+#define DEV_PID_EU1 0x0f8b /* product ID */
+#define DEV_PID_EU2 0x0294 /* product ID */
+
 #define DEV_EPOUT 0x00 /* control endpoint OUT */
 #define DEV_EPIN 0x80 /* contorl endpoint IN */
 /* Packet info */

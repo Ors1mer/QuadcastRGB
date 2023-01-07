@@ -145,8 +145,11 @@ static int is_micro(libusb_device *dev)
 {
     struct libusb_device_descriptor descr; /* no freeing needed */
     libusb_get_device_descriptor(dev, &descr);
-    if(descr.idVendor == DEV_VID && descr.idProduct == DEV_PID) {
+    if(descr.idVendor == DEV_VID_NA && descr.idProduct == DEV_PID_NA) {
         return 1;
+    } else if(descr.idVendor == DEV_VID_EU) {
+        if(descr.idProduct == DEV_PID_EU1 || descr.idProduct == DEV_PID_EU2)
+            return 1;
     }
     return 0;
 }
