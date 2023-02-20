@@ -52,27 +52,15 @@ static int claim_dev_interface(libusb_device_handle *handle);
 static libusb_device *dev_search();
 static int is_micro(libusb_device *dev);
 /* Packet transfer */
-static int send_header(libusb_device_handle *handle,
-                       byte_t op_code, short size);
-static int send_footer(libusb_device_handle *handle);
-static int send_data(libusb_device_handle *handle,
-                     datpack *data_arr, int pck_cnt);
-static int send_size(libusb_device_handle *handle, int colpairs);
-static short send_display_command(libusb_device_handle *handle);
-
-static void send_save(libusb_device_handle *handle, datpack *data_arr,
-                      int pck_cnt);
-static void send_display(libusb_device_handle *handle, const datpack *data_arr,
-                         int pck_cnt, int verbose);
+static short send_display_command(byte_t *packet,
+                                  libusb_device_handle *handle);
 static void display_data_arr(libusb_device_handle *handle,
                              const byte_t *colcommand, const byte_t *end);
-
 #ifndef DEBUG
 static void daemonize(int verbose);
 #endif
 #ifdef DEBUG
 static void print_packet(byte_t *pck, char *str);
-static void send_read(libusb_device_handle *handle);
 #endif
 
 /* Signal handling */
@@ -157,36 +145,6 @@ static int is_micro(libusb_device *dev)
 void send_packets(libusb_device_handle *handle, datpack *data_arr,
                   int pck_cnt, int verbose)
 {
-    short commands_cnt;
-    /* Assuming upper and lower counts are equal */
-    commands_cnt = count_color_commands(data_arr, pck_cnt, 0);
-    if(commands_cnt == 1) /* case of solid: write the data to the device */
-        send_save(handle, data_arr, pck_cnt);        
-    else /* case of any other mode: display loop until signal received */
-        send_display(handle, data_arr, pck_cnt, verbose);
-}
-
-static void send_save(libusb_device_handle *handle, datpack *data_arr,
-                      int pck_cnt)
-{
-    short errcode;
-    errcode = send_header(handle, DATA_HEADER, pck_cnt);
-    HANDLE_TRANSFER_ERR(errcode);
-    errcode = send_data(handle, data_arr, pck_cnt);
-    HANDLE_TRANSFER_ERR(errcode);
-    errcode = send_footer(handle);
-    HANDLE_TRANSFER_ERR(errcode);
-    errcode = send_header(handle, SIZE_HEADER, 1);
-    HANDLE_TRANSFER_ERR(errcode);
-    errcode = send_size(handle, count_color_commands(data_arr, pck_cnt, 0));
-    HANDLE_TRANSFER_ERR(errcode);
-    errcode = send_footer(handle);
-    HANDLE_TRANSFER_ERR(errcode);
-}
-
-static void send_display(libusb_device_handle *handle, const datpack *data_arr,
-                         int pck_cnt, int verbose)
-{
     short command_cnt;
     #ifdef DEBUG
     puts("Entering display mode...");
@@ -232,21 +190,23 @@ static void daemonize(int verbose)
 static void display_data_arr(libusb_device_handle *handle,
                              const byte_t *colcommand, const byte_t *end)
 {
-    byte_t *packet;
     short sent;
+    byte_t *packet;
+    byte_t header_packet[PACKET_SIZE] = {
+        HEADER_CODE, DISPLAY_CODE, 0, 0, 0, 0, 0, 0, PACKET_CNT, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
     packet = calloc(PACKET_SIZE, 1);
     while(colcommand < end && nonstop) {
-        sent = send_display_command(handle);
+        sent = send_display_command(header_packet, handle);
         if(sent != PACKET_SIZE) {
-            nonstop = 0; /* end the loop and cause program to exit */
-            break;
+            nonstop = 0; break; /* finish program in case of any errors */
         }
         memcpy(packet, colcommand, 2*BYTE_STEP);
         sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT,
                    BREQUEST_OUT, WVALUE, WINDEX, packet, PACKET_SIZE, TIMEOUT);
         if(sent != PACKET_SIZE) {
-            nonstop = 0;
-            break;
+            nonstop = 0; break;
         }
         #ifdef DEBUG
         print_packet(packet, "Data:");
@@ -257,137 +217,21 @@ static void display_data_arr(libusb_device_handle *handle,
     free(packet);
 }
 
-static short send_display_command(libusb_device_handle *handle)
+static short send_display_command(byte_t *packet, libusb_device_handle *handle)
 {
-    byte_t *packet;
     short sent;
-    packet = calloc(PACKET_SIZE, 1);
-    *packet = 0x04;
-    *(packet+1) = 0xf2;
-    *(packet+8) = 0x01;
     sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
-                                 WVALUE, WINDEX, packet, PACKET_SIZE, TIMEOUT);
+                                 WVALUE, WINDEX, packet, PACKET_SIZE,
+                                 TIMEOUT);
     #ifdef DEBUG
     print_packet(packet, "Header display:");
     if(sent != PACKET_SIZE)
         fprintf(stderr, HEADER_ERR_MSG, libusb_strerror(sent));
     #endif
-    free(packet);
     return sent;
 }
 
-static int send_header(libusb_device_handle *handle,
-                       byte_t op_code, short size)
-{
-    byte_t *packet;
-    ssize_t sent;
-    packet = calloc(PACKET_SIZE, 1);
-    /* Operation codes */
-    *packet = HEADER_CODE; /* the header code */
-    *(packet+1) = op_code; 
-    /* Size parameter */
-    *(packet+8) = size;
-
-    /* Do the transfer */
-    sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
-                                 WVALUE, WINDEX, packet, PACKET_SIZE, TIMEOUT);
-    #ifdef DEBUG
-    print_packet(packet, "Header:");
-    send_read(handle);
-    #endif
-    free(packet);
-    if(sent != PACKET_SIZE) {
-        fprintf(stderr, HEADER_ERR_MSG, libusb_strerror(sent));
-        return sent;
-    }
-    return 0;
-}
-
-static int send_footer(libusb_device_handle *handle)
-{
-    byte_t *packet;
-    ssize_t sent;
-    packet = calloc(PACKET_SIZE, 1);
-    /* Operation codes */
-    *packet = 0x04;
-    *(packet+1) = 0x02; 
-    /* Do the transfer */
-    sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
-                                   WVALUE, WINDEX, packet, PACKET_SIZE,
-                                   TIMEOUT);
-    #ifdef DEBUG
-    print_packet(packet, "Footer:");
-    send_read(handle);
-    #endif
-    free(packet);
-    if(sent != PACKET_SIZE) {
-        fprintf(stderr, FOOTER_ERR_MSG, libusb_strerror(sent));
-        return sent;
-    }
-    return 0;
-}
-
-static int send_data(libusb_device_handle *handle,
-                     datpack *data_arr, int pck_cnt)
-{
-    datpack *packet;
-    short sent;
-    for(packet = data_arr; packet < data_arr+pck_cnt; packet++) {
-        sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT,
-                                       BREQUEST_OUT, WVALUE, WINDEX,
-                                       *packet, PACKET_SIZE, TIMEOUT);
-        #ifdef DEBUG
-        print_packet(*packet, "Data:");
-        #endif
-        if(sent != PACKET_SIZE) {
-            fprintf(stderr, DATAPCK_ERR_MSG, libusb_strerror(sent));
-            return sent;
-        }
-    }
-    return 0;
-}
-
-static int send_size(libusb_device_handle *handle, int colpairs)
-{
-    byte_t *packet;
-    short sent;
-    packet = calloc(PACKET_SIZE, 1);
-    /* Operation codes */
-    *packet = 0x08;
-    *(packet+PACKET_SIZE-5) = 0x28;
-    *(packet+PACKET_SIZE-2) = 0xaa;
-    *(packet+PACKET_SIZE-1) = 0x55;
-    /* The amount of color pairs (upper and lower hex nums) */
-    *(packet+PACKET_SIZE-4) = (byte_t)(colpairs & 0xff); /* 1st byte */
-    *(packet+PACKET_SIZE-3) = (byte_t)((colpairs >> 8) & 0xff); /* 2nd byte */
-
-    sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
-                                   WVALUE, WINDEX, packet, PACKET_SIZE,
-                                   TIMEOUT);
-    #ifdef DEBUG
-    print_packet(packet, "Size:");
-    #endif
-    free(packet);
-    if(sent != PACKET_SIZE) {
-        fprintf(stderr, SIZEPCK_ERR_MSG, libusb_strerror(sent));
-        return sent;
-    }
-    return 0;
-}
-
 #ifdef DEBUG
-static void send_read(libusb_device_handle *handle)
-{
-    byte_t *packet;
-    packet = calloc(PACKET_SIZE, 1);
-    libusb_control_transfer(handle, BMREQUEST_TYPE_IN, BREQUEST_IN, WVALUE,
-                            WINDEX, packet, PACKET_SIZE, TIMEOUT);
-    #ifdef DEBUG
-    print_packet(packet, "Read:");
-    #endif
-    free(packet);
-}
-
 static void print_packet(byte_t *pck, char *str)
 {
     byte_t *p;

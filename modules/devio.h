@@ -52,11 +52,8 @@
 #define PACKET_SIZE 64 /* bytes */
 
 #define HEADER_CODE 0x04
-#define STARTUP_HEADER1 0x58
-#define STARTUP_HEADER2 0x56
-#define STARTUP_HEADER3 0x57
-#define DATA_HEADER 0x53
-#define SIZE_HEADER 0x23
+#define DISPLAY_CODE 0xf2
+#define PACKET_CNT 0x01
 
 #define INTR_EP_IN 0x82
 #define INTR_LENGTH 8
@@ -68,6 +65,7 @@
 #define BREQUEST_IN 0x01
 #define WVALUE 0x0300
 #define WINDEX 0x0000
+
 /* Messages */
 #define DEVLIST_ERR_MSG _("Couldn't get the list of USB devices.\n")
 #define NODEV_ERR_MSG _("HyperX Quadcast S isn't connected.\n")
