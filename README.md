@@ -2,15 +2,15 @@
 # About
 The program (or driver, if you wish) allows changing the RGB colors of the
 microphone HyperX Quadcast S just like NGenuity does. Should support all
-platforms, Unix-like preferably. Only Linux and partially FreeBSD were tested
+Unix-like platforms. Only Linux and partially FreeBSD were tested
 so far.
 
 Available modes are *solid, blink, cycle, wave, lightning, and pulse*. The
-program runs as a daemon for each of these modes except *solid*.
+program runs as a daemon, kill it or unplug the mic to stop.
 
 ## Features:
-- *free software (GPL-2.0-only)*
-- *cross-platform*
+- *free & open source (GPL-2.0-only)*
+- *most Linux distros supported, *BSD should work*
 - *cli*
 - *daemon*
 
@@ -85,9 +85,11 @@ rpm -ivh ~/rpmbuild/RPMS/x86_64/quadcastrgb-1.0.0-1.x86_64.rpm
 ## Compiling from source
 If you are lucky, this should be enough:
 ```bash
-make install # for linux
-gmake install OS=freebsd # for freebsd
+make install # linux
+gmake install OS=freebsd # freebsd
 ```
+Specify *BINDIR_INS* and *MANDIR_INS* for *make* if you want to change the
+install locations.
 
 # Basic problems during & after Install
 ## Problem 1: make failed
@@ -110,6 +112,16 @@ privileges. If that was the problem, you should eventually create a dev rule
 for the microphone to allow certain users access to it.
 
 ## How to create the udev rule
+Firstly, check what is the VendorID:ProductID of your mic e. g. like this:
+```bash
+$ lsusb
+Bus 001 Device 007: ID 0951:171f Kingston Technology HyperX QuadCast S # this is what you're looking for
+Bus 001 Device 006: ID 0951:171d Kingston Technology HyperX QuadCast S
+```
+It should be either 0951:171f, 03f0:0f8b, or 03f0:028c (if it isn't, contact
+me, the author, I'll add support for your IDs). 
+
+Let's proceed to the rule creation:
 ```bash
 # Here the rules are stored:
 cd /etc/udev/rules.d 
@@ -118,7 +130,7 @@ vi 10-quadcast-perm.rules
 ```
 Write this line, save & exit (:wq):
 ```bash
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="0951", ATTRS{idProduct}=="171f", MODE="0660", GROUP="hyperrgb" 
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="<THE_VENDOR_ID>", ATTRS{idProduct}=="<THE_PRODUCT_ID>", MODE="0660", GROUP="hyperrgb" 
 ```
 Now the microphone is accessible for the group "hyperrgb". Add your user to the
 group and it's done.
@@ -132,4 +144,10 @@ Simply kill the process by name:
 ```bash
 killall quadcastrgb
 ```
+
+## Problem 5: "HyperX Quadcast S isn't connected" even though it is
+Chances are you have a new revision of the mic that has unsupported
+VendorID:ProductID. **The currently supported IDs are 0951:171f, 03f0:0f8b, and
+03f0:028c**. If you have different IDs (check it with *lsusb*, for example),
+contact the author; I'll add the support very quickly.
 

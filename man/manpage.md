@@ -1,6 +1,6 @@
-% QUADCASTRGB(1) quadcastrgb 0.95
+% QUADCASTRGB(1) quadcastrgb 1.0.1
 % Ors1mer <ors1mer_dev [[at]] proton.me>
-% 2022 November 30
+% 2023 February 20
 
 # NAME
 quadcastrgb - set RGB mode for the microphone HyperX Quadcast S
@@ -9,14 +9,13 @@ quadcastrgb - set RGB mode for the microphone HyperX Quadcast S
 **quadcastrgb** [-h] [-v] [-a|-u|-l] [-b bright] [-s speed] [-d delay] mode [COLORS]...
 
 # DESCRIPTION
-**quadcastrgb** looks for a connected Quadcast S micro, then connects to it and
-changes the rgb mode and colors depending on the given parameters.
+**quadcastrgb** looks for a Quadcast S micro, then connects to it and
+sends colors to display depending on the given parameters.
 
-There are two possible ways of how the program behaves: writes the color into
-the microphone or becomes a daemon and continuously sends data to the device.
-The first behavior is only done when solid mode is used. Any other mode causes
-the program to become a daemon that should be killed with SIGTERM or SIGINT
-once the user doesn't need it.
+The program becomes a daemon that continuously transfers data to the device.
+Should be killed with SIGTERM or SIGINT once the user doesn't need it. It also
+ends automatically if can't send data to the device anymore (e. g. the mic was
+unplugged)
 
 Available modes:  
 - solid  
@@ -86,7 +85,7 @@ lightning for the lower
 : A libusb function error (probably due to failed memory allocation)
 
 **3**
-: The microphone isn't connected
+: The microphone isn't connected or couldn't be detected by the program
 
 **4**
 : Failed to open the microphone descriptor. Consider running the program with
@@ -97,18 +96,14 @@ use the device
 : Failed to transfer some packets
 
 # CAVEATS
-It isn't possible to setup only one (upper or lower) diode group without
-changing the other. If a mode set to only one diode group, the other is set to
-solid black (i. e. no color).
-
 In order for a new instance to work the previous one must be killed.
 
 It is possible to use '#rrggbb' notation for colors, but the '#' must be
-escaped to be parsed successfully by a shell. In order to do this put '\'
-before it: '\#rrggbb', or write the hexcolor in double quotes.
+scaped to be parsed successfully by shell. In order to do this escape this
+character: '\#rrggbb', or write the hexcolor in double quotes.
 
 # COPYRIGHT
-Copyright (C) 2022 Ors1mer. License GPLv2: GNU GPL version 2 only
+Copyright (C) 2023 Ors1mer. License GPLv2: GNU GPL version 2 only
 <https://www.gnu.org/licenses/gpl-2.0.en.html>.
 This is free software: you are free to change and redistribute it. There is
 NO WARRANTY, to the extent permitted by law.
