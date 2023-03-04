@@ -10,7 +10,7 @@ OBJMODULES = $(SRCMODULES:.c=.o)
 
 BINPATH = ./quadcastrgb
 DEVBINPATH = ./dev
-MANPATH = nix/quadcastrgb.1
+MANPATH = man/quadcastrgb.1
 
 BINDIR_INS = $${HOME}/.local/bin/
 MANDIR_INS = $${HOME}/.local/share/man/man1/
@@ -60,7 +60,7 @@ install: quadcastrgb $(MANPATH).gz $(BINDIR_INS) $(MANDIR_INS)
 	cp $(BINPATH) $(BINDIR_INS)
 	cp $(MANPATH).gz $(MANDIR_INS)
 
-man: nix/manpage.md
+man: man/manpage.md
 	pandoc $< -s -t man -o $(MANPATH)
 	gzip $(MANPATH)
 
@@ -76,7 +76,7 @@ debpkg: quadcastrgb
 
 rpmpkg: main.c $(SRCMODULES)
 	rpmdev-setuptree
-	cp -r main.c Makefile nix modules $${HOME}/rpmbuild/BUILD/
+	cp -r main.c Makefile man modules $${HOME}/rpmbuild/BUILD/
 	cp rpm/quadcastrgb.spec $${HOME}/rpmbuild/SPECS/
 	tar -zcf $${HOME}/rpmbuild/SOURCES/quadcastrgb-${BINVER}.tgz .
 	rpmbuild --ba $${HOME}/rpmbuild/SPECS/quadcastrgb.spec
