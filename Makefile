@@ -1,4 +1,4 @@
-OS = linux # should be overriden if necessary
+OS = linux # should be overridden if necessary
 
 CFLAGS_DEV = -g -Wall -D DEBUG
 CFLAGS_INS = -s -O2
@@ -16,14 +16,14 @@ BINDIR_INS = $${HOME}/.local/bin/
 MANDIR_INS = $${HOME}/.local/share/man/man1/
 
 # Packaging
-BINVER = 1.0.0
+BINVER = 1.0.1
 DEBPKGVER = 1
 DEBARCH = amd64
 DEBNAME = quadcastrgb-$(BINVER)-$(DEBPKGVER)-$(DEBARCH)
 
 # System-dependent part
 ifeq ($(OS),freebsd)
-	LIBS = -lusb-1.0 -lintl # libintl requires the explicit indicaiton
+	LIBS = -lusb-1.0 -lintl # libintl requires the explicit indication
 endif
 ifeq ($(OS),freebsd) # thus, gcc required on FreeBSD
 	CC = gcc # clang seems to be unable to find libusb & libintl
@@ -59,10 +59,6 @@ endif
 install: quadcastrgb $(MANPATH).gz $(BINDIR_INS) $(MANDIR_INS)
 	cp $(BINPATH) $(BINDIR_INS)
 	cp $(MANPATH).gz $(MANDIR_INS)
-
-man: man/manpage.md
-	pandoc $< -s -t man -o $(MANPATH)
-	gzip $(MANPATH)
 
 debpkg: quadcastrgb
 	mkdir deb/$(DEBNAME)

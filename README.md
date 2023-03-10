@@ -10,7 +10,7 @@ program runs as a daemon, kill it or unplug the mic to stop.
 
 ## Features:
 - *free & open source (GPL-2.0-only)*
-- *most Linux distros supported, *BSD should work*
+- *most Linux distros supported, \*BSD should work*
 - *cli*
 - *daemon*
 
