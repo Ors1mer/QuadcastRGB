@@ -44,6 +44,7 @@
 #define DEV_PID_NA 0x171f
 #define DEV_PID_EU1 0x0f8b
 #define DEV_PID_EU2 0x028c
+#define DEV_PID_EU3 0x048c
 
 #define DEV_EPOUT 0x00 /* control endpoint OUT */
 #define DEV_EPIN 0x80 /* contorl endpoint IN */

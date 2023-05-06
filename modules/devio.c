@@ -136,7 +136,8 @@ static int is_micro(libusb_device *dev)
     if(descr.idVendor == DEV_VID_NA && descr.idProduct == DEV_PID_NA) {
         return 1;
     } else if(descr.idVendor == DEV_VID_EU) {
-        if(descr.idProduct == DEV_PID_EU1 || descr.idProduct == DEV_PID_EU2)
+        if(descr.idProduct == DEV_PID_EU1 || descr.idProduct == DEV_PID_EU2
+                                          || descr.idProduct == DEV_PID_EU3)
             return 1;
     }
     return 0;
