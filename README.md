@@ -136,7 +136,7 @@ Now the microphone is accessible for the group "hyperrgb". Add your user to the
 group and it's done.
 
 ## Problem 4: launching the program a second time does nothing
-The problem probably is that the previous instance is still running. Kill it
+Probably, the previous instance is still running. Kill it
 with *kill* or *killall*.
 
 ## How to end the program
@@ -147,7 +147,7 @@ killall quadcastrgb
 
 ## Problem 5: "HyperX Quadcast S isn't connected" even though it is
 Chances are you have a new revision of the mic that has unsupported
-VendorID:ProductID. **The currently supported IDs are 0951:171f, 03f0:0f8b, and
-03f0:028c**. If you have different IDs (check it with *lsusb*, for example),
-contact the author; I'll add the support very quickly.
+VendorID:ProductID. **The currently supported IDs are 0951:171f, 03f0:0f8b, 
+03f0:028c, and 03f0:048c**. If you have different IDs (check it with *lsusb*,
+for example), contact the author; I'll add the support very quickly.
 
