@@ -1,7 +1,7 @@
 Name:           quadcastrgb
-Version:        1.0.0
-Release:        1
-Summary:        Set RGB mode for the microphone HyperX Quadcast S
+Version:        1.0.2
+Release:        2
+Summary:        set RGB mode for the microphone HyperX Quadcast S
 
 License:        GPL
 URL:            https://gitlab.com/Ors1mer/QuadcastRGB
@@ -33,5 +33,7 @@ make install BINDIR_INS=$RPM_BUILD_ROOT/%{_bindir} \
 
 
 %changelog
+* Wed May 10 2023 Ors1mer
+- Version 1.0.2
 * Thu Dec 09 2022 Ors1mer
 - Package of the first version

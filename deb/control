@@ -1,10 +1,10 @@
 Package: quadcastrgb
-Version: 1.0.0
+Version: 1.0.2
 Architecture: amd64
 Essential: no
 Priority: optional
 Depends: libc6-dev,libusb-1.0-0-dev
 Maintainer: Ors1mer
 Homepage: https://gitlab.com/Ors1mer/QuadcastRGB/
-Description: Set RGB mode for the microphone HyperX Quadcast S
+Description: set RGB mode for the microphone HyperX Quadcast S
 

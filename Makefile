@@ -16,8 +16,8 @@ BINDIR_INS = $${HOME}/.local/bin/
 MANDIR_INS = $${HOME}/.local/share/man/man1/
 
 # Packaging
-BINVER = 1.0.1
-DEBPKGVER = 1
+BINVER = 1.0.2
+DEBPKGVER = 2
 DEBARCH = amd64
 DEBNAME = quadcastrgb-$(BINVER)-$(DEBPKGVER)-$(DEBARCH)
 
@@ -70,9 +70,9 @@ debpkg: quadcastrgb
 	cp $(MANPATH).gz deb/$(DEBNAME)/usr/share/man/man1
 	dpkg --build deb/$(DEBNAME)
 
-rpmpkg: main.c $(SRCMODULES)
+rpmpkg: main.c $(SRCMODULES) man/quadcastrgb.1.gz
 	rpmdev-setuptree
-	cp -r main.c Makefile man modules $${HOME}/rpmbuild/BUILD/
+	cp -r main.c Makefile modules $${HOME}/rpmbuild/BUILD/
 	cp rpm/quadcastrgb.spec $${HOME}/rpmbuild/SPECS/
 	tar -zcf $${HOME}/rpmbuild/SOURCES/quadcastrgb-${BINVER}.tgz .
 	rpmbuild --ba $${HOME}/rpmbuild/SPECS/quadcastrgb.spec
