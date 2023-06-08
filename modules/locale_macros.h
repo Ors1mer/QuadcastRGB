@@ -26,12 +26,16 @@
  * Also, you may visit the Free Software Foundation at
  * 51 Franklin Street, Fifth Floor Boston, MA 02110 USA. 
  */
+/*
 #include <locale.h>
 #include <libintl.h>
+*/
 
 /* Constants */
+/*
 #define LOCALEBASEDIR "../lang"
 #define TEXTDOMAIN "hyperrgb"
+*/
 
 /* Macros */
 #define _(STR) (STR) /* the string is language-dependent */

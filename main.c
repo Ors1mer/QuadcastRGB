@@ -57,7 +57,7 @@ int main(int argc, const char **argv)
     datpack *data_arr;
     libusb_device_handle *handle;
     int verbose = 0, data_packet_cnt;
-    LOCALESETUP();
+    /*LOCALESETUP();*/
     /* Parse arguments */
     cs = parse_arg(argc, argv, &verbose);
     VERBOSE_PRINT(verbose, VERBOSE1_ARG);
