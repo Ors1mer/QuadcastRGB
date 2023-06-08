@@ -49,7 +49,7 @@
 
 /* Microphone opening */
 static int claim_dev_interface(libusb_device_handle *handle);
-static libusb_device *dev_search();
+static libusb_device *dev_search(libusb_device **devs, ssize_t cnt);
 static int is_micro(libusb_device *dev);
 /* Packet transfer */
 static short send_display_command(byte_t *packet,
