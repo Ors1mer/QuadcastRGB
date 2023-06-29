@@ -96,7 +96,6 @@ install locations.
 Check the dependencies:  
  - gcc v12.2.0 OR clang v14.0.6 (most versions should do fine)
  - libusb-1.0 v1.0.26
- - gettext v0.21-2
  - glibc
  - gcc-libs
 
