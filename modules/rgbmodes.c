@@ -265,12 +265,9 @@ static void sequence_blink(const struct colscheme *colsch, byte_t *da,
                            int pckcnt)
 {
     const int *col;
-    int colpair = 0;
     int col_seg = 101 - colsch->spd;
-    for(col = colsch->colors; *col != nocolor; col++) {
+    for(col = colsch->colors; *col != nocolor; col++)
         blink_segment_fill(*col, col_seg, colsch->dly, &da);
-        colpair += col_seg + colsch->dly;
-    }
 }
 
 static void blink_segment_fill(int col, int col_seg, int dly_seg, byte_t **da)
