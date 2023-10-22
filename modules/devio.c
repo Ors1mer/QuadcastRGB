@@ -143,7 +143,7 @@ static int is_micro(libusb_device *dev)
     return 0;
 }
 
-void send_packets(libusb_device_handle *handle, datpack *data_arr,
+void send_packets(libusb_device_handle *handle, const datpack *data_arr,
                   int pck_cnt, int verbose)
 {
     short command_cnt;

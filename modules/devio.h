@@ -29,8 +29,8 @@
 #ifndef DEVIO_SENTRY
 #define DEVIO_SENTRY
 
-#include <libusb-1.0/libusb.h>
 #include <unistd.h> /* for usleep */
+#include <libusb-1.0/libusb.h>
 #include <fcntl.h> /* for demonization */
 #include <signal.h> /* for signal handling */
 #include "locale_macros.h"
@@ -90,6 +90,6 @@ enum {
 
 /* Functions */
 libusb_device_handle *open_micro(datpack *data_arr);
-void send_packets(libusb_device_handle *handle, datpack *data_arr,
+void send_packets(libusb_device_handle *handle, const datpack *data_arr,
                   int pck_cnt, int verbose);
 #endif

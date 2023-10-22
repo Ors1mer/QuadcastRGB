@@ -53,8 +53,8 @@ static int is_mode(const char *str);
         *u = *l = value; \
     } \
 
-WRITE_PARAM(int, write_int_param);
-WRITE_PARAM(const char *, write_str_param);
+WRITE_PARAM(int, write_int_param)
+WRITE_PARAM(const char *, write_str_param)
 
 /* Const arrays */
 const char *modes[MODES_CNT] = {
