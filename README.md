@@ -1,9 +1,9 @@
 # QuadcastRGB
 # About
 The program (or driver, if you wish) allows changing the RGB colors of the
-microphone HyperX Quadcast S just like NGenuity does. Should support all
-Unix-like platforms. Only Linux and partially FreeBSD were tested
-so far.
+microphone HyperX Quadcast S just like NGenuity does. Must support all
+Unix-like operating systems. Only Linux and partially FreeBSD and MacOS were
+tested so far.
 
 Available modes are *solid, blink, cycle, wave, lightning, and pulse*. The
 program runs as a daemon, kill it or unplug the mic to stop.
@@ -15,14 +15,11 @@ program runs as a daemon, kill it or unplug the mic to stop.
 - *daemon*
 
 ## Things yet to be done:
-- *several microphones support*
-- *extra modes: ~pulse,~ visualizer*
-- *~aur, deb, rpm packages~*
-- *~refuse to work if another instance is running~*
-- *~the original modes: solid, blink, cycle, wave, lightning~*
-- *~brightness & speed~*
-- *~delay - **blink**-specific option~*
-- *~actual installation~*
+- *visualizer mode (i.e. VU meter)*
+- *save option*
+- *multiple mics support*
+- *self-contained static compilation (preferably without libusb)*
+- *properly test \*BSD systems and MacOS*
 
 ## Examples:
 ```bash
@@ -54,10 +51,9 @@ cd .. && rm -rf quadcastrgb # clean-up
 ```
 
 ## Debian-based distro
-There is a *deb* package in the latest GitHub release. Simply download it and
-install:
+Simply download it and install:
 ```bash
-wget https://github.com/Ors1mer/QuadcastRGB/releases/download/v1.0.2/quadcastrgb-1.0.2-2-amd64.deb
+wget https://ors1mer.xyz/downloads/quadcastrgb-1.0.2-2-amd64.deb
 dpkg -i quadcastrgb-1.0.2-2-amd64.deb
 ```
 Alternatively, it is possible to make a deb package of your own:
@@ -71,7 +67,7 @@ dpkg -i deb/quadcastrgb-1.0.2-2-amd64.deb # install
 ## RPM-based distro
 Everything is pretty much the same as for deb. Simply download and install:
 ```bash
-wget https://github.com/Ors1mer/QuadcastRGB/releases/download/v1.0.2/quadcastrgb-1.0.2-2.x86_64.rpm
+wget https://ors1mer.xyz/downloads/quadcastrgb-1.0.2-2.x86_64.rpm
 rpm -ivh quadcastrgb-1.0.2-2.x86_64.rpm
 ```
 Or build the package from source:
