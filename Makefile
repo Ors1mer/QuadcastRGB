@@ -16,7 +16,7 @@ BINDIR_INS = $${HOME}/.local/bin/
 MANDIR_INS = $${HOME}/.local/share/man/man1/
 
 # Packaging
-BINVER = 1.0.2
+BINVER = 1.0.3
 DEBPKGVER = 2
 DEBARCH = amd64
 DEBNAME = quadcastrgb-$(BINVER)-$(DEBPKGVER)-$(DEBARCH)
