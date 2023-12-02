@@ -113,8 +113,8 @@ $ lsusb
 Bus 001 Device 007: ID 0951:171f Kingston Technology HyperX QuadCast S # this is what you're looking for
 Bus 001 Device 006: ID 0951:171d Kingston Technology HyperX QuadCast S
 ```
-It should be either 0951:171f, 03f0:0f8b, or 03f0:028c (if it isn't, contact
-me, the author, I'll add support for your IDs). 
+It must be either 0951:171f, 03f0:0f8b, 03f0:028c, 03f0:048c, 03f0:068c (if
+it isn't, contact me, the author, I'll add support for your IDs). 
 
 Let's proceed to the rule creation:
 ```bash
@@ -143,6 +143,6 @@ killall quadcastrgb
 ## Problem 5: "HyperX Quadcast S isn't connected" even though it is
 Chances are you have a new revision of the mic that has unsupported
 VendorID:ProductID. **The currently supported IDs are 0951:171f, 03f0:0f8b, 
-03f0:028c, and 03f0:048c**. If you have different IDs (check it with *lsusb*,
-for example), contact the author; I'll add the support very quickly.
+03f0:028c, 03f0:048c, and 03f0:068c**. If you have different IDs (check it with
+*lsusb*, for example), contact the author; I'll add the support very quickly.
 
