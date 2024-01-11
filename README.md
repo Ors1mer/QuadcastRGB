@@ -2,15 +2,15 @@
 # About
 The program (or driver, if you wish) allows changing the RGB colors of the
 microphone HyperX Quadcast S just like NGenuity does. Must support all
-Unix-like operating systems. Only Linux and partially FreeBSD and MacOS were
-tested so far.
+Unix-like operating systems. The Linux and MacOS versions have been tested and
+work as expected. FreeBSD and other BSDs should work.
 
 Available modes are *solid, blink, cycle, wave, lightning, and pulse*. The
 program runs as a daemon, kill it or unplug the mic to stop.
 
 ## Features:
 - *free & open source (GPL-2.0-only)*
-- *most Linux distros supported, \*BSD should work*
+- *works on Unix-like OSes*
 - *cli*
 - *daemon*
 
@@ -78,6 +78,69 @@ make rpmpkg # build the package in ~/rpmbuild/
 rpm -ivh quadcastrgb-1.0.3-2.x86_64.rpm
 ```
 
+## MacOS
+### Installation
+Download the binary executable for your processor architecture (Intel or ARM):
+- https://ors1mer.xyz/downloads/quadcastrgb-1.0.3_macos_intel
+- https://ors1mer.xyz/downloads/quadcastrgb-1.0.3_macos_arm
+
+Rename the file however you like (`quadcastrgb` in the example). Open the
+directory (folder) with the binary in `Terminal` and launch the program like
+this:
+```bash
+./quadcastrgb solid
+```
+If you have encountered errors, you probably have to install the `libusb`
+dynamic library.
+### Libusb installation
+#### Compilation: the recommended way
+In `Terminal` enter:
+```bash
+curl -O https://github.com/libusb/libusb/releases/tag/v1.0.26
+tar xvfj libusb-1.0.26.tar.bz2
+cd libusb-1.0.26
+./configure
+make
+make check
+sudo make install
+cd .. && rm -r libusb-1.0.26
+```
+The `make` command might prompt you to install "additional development tools".
+Just agree and re-execute the command as well as the remaining ones.
+#### Homebrew
+```bash
+brew install libusb # may not work! Look at the other libusb installation
+```
+### I want quadcastrgb to continue running after I close the terminal
+Just launch the program like this:
+```bash
+open -a /path/to/quadcastrgb --args <program arguments>
+```
+You must enter the absolute path to the executable after the `-a` option. There
+are a bunch of options for how to do this. You may find it in the file
+properties. Or run this while in the program directory in `Terminal`:
+```
+pwd
+```
+You'll get something like `/Users/Bob/Desktop`. Just append `/quadcastrgb`
+(assuming `quadcastrgb` is the name of the file) to the output, and that will
+be the absolute path.
+
+To make the command shorter, create an alias:
+```bash
+alias quadcastrgb="open -a /path/to/quadcastrgb --args "
+```
+To make the alias permanent, run this:
+```bash
+echo "alias quadcastrgb=\"open -a /path/to/quadcastrgb --args\"" >> ~/.zshrc
+```
+Now you can run it from any directory in `Terminal`:
+```
+quadcastrgb <arguments>
+```
+Keep in mind that if you move the program file elsewhere, its absolute path
+changes and you'll have to update the alias.
+
 ## Compiling from source
 If you are lucky, this should be enough:
 ```bash
@@ -92,7 +155,7 @@ install locations.
 Check the dependencies:  
  - gcc v12.2.0 OR clang v14.0.6 (most versions should do fine)
  - libusb-1.0 v1.0.26
- - glibc
+ - glibc or any other standard C library
  - gcc-libs
 
 ## Problem 2: command not found
