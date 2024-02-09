@@ -19,7 +19,7 @@ program runs as a daemon, kill it or unplug the mic to stop.
 - *save option*
 - *multiple mics support*
 - *self-contained static compilation (preferably without libusb)*
-- *properly test \*BSD systems and MacOS*
+- *properly test \*BSD systems*
 
 ## Examples:
 ```bash
@@ -84,33 +84,43 @@ Download the binary executable for your processor architecture (Intel or ARM):
 - https://ors1mer.xyz/downloads/quadcastrgb-1.0.3_macos_intel
 - https://ors1mer.xyz/downloads/quadcastrgb-1.0.3_macos_arm
 
-Rename the file however you like (`quadcastrgb` in the example). Open the
-directory (folder) with the binary in `Terminal` and launch the program like
-this:
+Rename the file however you like (`quadcastrgb` in the examples). Open the
+directory (folder) with the file in `Terminal`. Execute this to make the
+file executable and allow it to run on the system (MacOS doesn't trust the
+binary by default; if you do not either - don't use the program):
+```bash
+chmod 711 quadcastrgb
+xattr -dr com.apple.quarantine quadcastrgb
+```
+Launch the program like this:
 ```bash
 ./quadcastrgb solid
 ```
-If you have encountered errors, you probably have to install the `libusb`
-dynamic library.
+If you have encountered errors (e.g. `Library not loaded`), you have to install
+the `libusb` dynamic library.
 ### Libusb installation
-#### Compilation: the recommended way
+#### Homebrew
+```bash
+brew install libusb
+ln -s /opt/homebrew/Cellar/libusb/1.0.27/lib/libusb-1.0.0.dylib /usr/local/lib/libusb-1.0.0.dylib
+```
+The second command creates a symlink so that the binary can find the library
+(for some reason, `homebrew` doesn't do it automatically). You'll also need
+superuser rights for the command.
+#### Compilation
 In `Terminal` enter:
 ```bash
-curl -O https://github.com/libusb/libusb/releases/tag/v1.0.26
+curl -OL https://github.com/libusb/libusb/releases/download/v1.0.26/libusb-1.0.26.tar.bz2
 tar xvfj libusb-1.0.26.tar.bz2
 cd libusb-1.0.26
 ./configure
 make
 make check
-sudo make install
+make install # needs superuser rights
 cd .. && rm -r libusb-1.0.26
 ```
 The `make` command might prompt you to install "additional development tools".
 Just agree and re-execute the command as well as the remaining ones.
-#### Homebrew
-```bash
-brew install libusb # may not work! Look at the other libusb installation
-```
 ### I want quadcastrgb to continue running after I close the terminal
 Just launch the program like this:
 ```bash
@@ -150,11 +160,11 @@ gmake install OS=freebsd # freebsd
 Specify *BINDIR_INS* and *MANDIR_INS* for *make* if you want to change the
 install locations.
 
-# Basic problems during & after Install
+# FAQ
 ## Problem 1: make failed
 Check the dependencies:  
  - gcc v12.2.0 OR clang v14.0.6 (most versions should do fine)
- - libusb-1.0 v1.0.26
+ - libusb-1.0 v1.0.26 or newer
  - glibc or any other standard C library
  - gcc-libs
 
