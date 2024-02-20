@@ -31,24 +31,25 @@
 
 #include <unistd.h> /* for usleep */
 #include <libusb-1.0/libusb.h>
-#include <fcntl.h> /* for demonization */
+#include <fcntl.h> /* for daemonization */
 #include <signal.h> /* for signal handling */
 #include "locale_macros.h"
 #include "rgbmodes.h" /* for datpack & byte_t types, count_color_pairs, defs */
 
 /* Constants */
 /* Vendor IDs */
-#define DEV_VID_NA 0x0951
-#define DEV_VID_EU 0x03f0
+#define DEV_VID_NA      0x0951
+#define DEV_VID_EU      0x03f0
 /* Product IDs */
-#define DEV_PID_NA 0x171f
-#define DEV_PID_EU1 0x0f8b
-#define DEV_PID_EU2 0x028c
-#define DEV_PID_EU3 0x048c
-#define DEV_PID_EU4 0x068c
+#define DEV_PID_NA      0x171f
+#define DEV_PID_EU1     0x0f8b
+#define DEV_PID_EU2     0x028c
+#define DEV_PID_EU3     0x048c
+#define DEV_PID_EU4     0x068c
+#define DEV_PID_DUOCAST 0x098c
 
 #define DEV_EPOUT 0x00 /* control endpoint OUT */
-#define DEV_EPIN 0x80 /* contorl endpoint IN */
+#define DEV_EPIN 0x80 /* control endpoint IN */
 /* Packet info */
 #define MAX_PCT_CNT 90
 #define PACKET_SIZE 64 /* bytes */
@@ -81,7 +82,7 @@
 #define SIZEPCK_ERR_MSG _("Size packet error: %s\n")
 #define DATAPCK_ERR_MSG _("Data packet error: %s\n")
 #define PID_MSG _("Started with pid %d\n")
-/* Errcodes */
+/* Error codes */
 enum {
     libusberr = 2,
     nodeverr,
