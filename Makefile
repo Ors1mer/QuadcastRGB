@@ -1,9 +1,9 @@
 OS = linux # should be overridden if necessary
 
-CFLAGS_DEV = -g -Wall -D DEBUG
-CFLAGS_INS = -s -O2
+CFLAGS_DEV = -g -Wall -D DEBUG -static
+CFLAGS_INS = -s -O2 -Wall -static
 
-LIBS = -lusb-1.0
+LIBS =
 
 SRCMODULES = modules/argparser.c modules/devio.c modules/rgbmodes.c
 OBJMODULES = $(SRCMODULES:.c=.o)
@@ -21,21 +21,11 @@ DEBPKGVER = 2
 DEBARCH = amd64
 DEBNAME = quadcastrgb-$(BINVER)-$(DEBPKGVER)-$(DEBARCH)
 
-# System-dependent part
-ifeq ($(OS),freebsd)
-	LIBS = -lusb-1.0 -lintl # libintl requires the explicit indication
-endif
-ifeq ($(OS),freebsd) # thus, gcc required on FreeBSD
-	CC = gcc # clang seems to be unable to find libusb & libintl
-endif
-# END
-
 dev: main.c $(OBJMODULES)
 	$(CC) $(CFLAGS_DEV) $^ $(LIBS) -o $(DEVBINPATH)
 
 quadcastrgb: main.c $(OBJMODULES)
 	$(CC) $(CFLAGS_INS) $^ $(LIBS) -o $(BINPATH)
-
 
 # For directories
 %/:

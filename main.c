@@ -29,21 +29,9 @@
 #include "modules/rgbmodes.h"
 #include "modules/devio.h"
 
-#define LOCALESETUP() \
-    setlocale(LC_CTYPE, ""); \
-    setlocale(LC_MESSAGES, ""); \
-    bindtextdomain(TEXTDOMAIN, LOCALEBASEDIR); \
-    textdomain(TEXTDOMAIN)
-
 #define VERBOSE_PRINT(V, MSG) \
     if(V) \
         puts(MSG)
-
-#define LIBUSB_FREE_EVERYTHING() \
-    libusb_release_interface(handle, 0); \
-    libusb_release_interface(handle, 1); \
-    libusb_close(handle); \
-    libusb_exit(NULL)
 
 #define VERBOSE1_ARG _("Arguments parsed successfully.")
 #define VERBOSE2_COL _("Assembling data packets.")
@@ -55,9 +43,7 @@ int main(int argc, const char **argv)
 {
     struct colschemes *cs;
     datpack *data_arr;
-    libusb_device_handle *handle;
     int verbose = 0, data_packet_cnt;
-    /*LOCALESETUP();*/
     /* Parse arguments */
     cs = parse_arg(argc, argv, &verbose);
     VERBOSE_PRINT(verbose, VERBOSE1_ARG);
@@ -67,13 +53,14 @@ int main(int argc, const char **argv)
     free(cs);
     /* Open the microphone */
     VERBOSE_PRINT(verbose, VERBOSE3_MIC);
-    handle = open_micro(data_arr); /* data_arr for freeing memory */
+    open_micro(data_arr); /* data_arr for freeing memory */
     /* Send packets */
+    /*
     VERBOSE_PRINT(verbose, VERBOSE4_PKT);
     send_packets(handle, data_arr, data_packet_cnt, verbose);
+    */
     /* Free all memory */
     free(data_arr);
-    LIBUSB_FREE_EVERYTHING();
     VERBOSE_PRINT(verbose, VERBOSE5_END);
     return 0;
 }
