@@ -1,4 +1,4 @@
-/* quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
+/* quadcastrgb - set RGB lights of HyperX Quadcast S and DuoCast
  * File argparser.h
  * The task of this module is to allocate a colorscheme struct
  * according to the arguments.
@@ -6,10 +6,10 @@
  * with 0 exit code.
  *
  * <----- License notice ----->
- * Copyright (C) 2022 Ors1mer
+ * Copyright (C) 2022, 2023, 2024 Ors1mer
  *
  * You may contact the author by email:
- * ors1mer_dev [[at]] proton.me
+ * ors1mer [[at]] ors1mer dot xyz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

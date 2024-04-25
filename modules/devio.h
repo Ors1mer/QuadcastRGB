@@ -1,14 +1,14 @@
-/* quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
+/* quadcastrgb - set RGB lights of HyperX Quadcast S and DuoCast
  * File devio.h
  * Device input/output.
  * The device is microphone HyperX Quadcast S
  * distinguished by the VID & PID.
  *
  * <----- License notice ----->
- * Copyright (C) 2022 Ors1mer
+ * Copyright (C) 2022, 2023, 2024 Ors1mer
  *
  * You may contact the author by email:
- * ors1mer_dev [[at]] proton.me
+ * ors1mer [[at]] ors1mer dot xyz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

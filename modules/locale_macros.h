@@ -1,14 +1,14 @@
-/* quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
+/* quadcastrgb - set RGB lights of HyperX Quadcast S and DuoCast
  * File locale_macros.h
  * Stuff for proper work of gettext in order to achieve
  * multi-language support.
  * This is a header without the source file (because it isn't needed).
  *
  * <----- License notice ----->
- * Copyright (C) 2022 Ors1mer
+ * Copyright (C) 2022, 2023, 2024 Ors1mer
  *
  * You may contact the author by email:
- * ors1mer_dev [[at]] proton.me
+ * ors1mer [[at]] ors1mer dot xyz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

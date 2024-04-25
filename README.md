@@ -1,12 +1,13 @@
 # QuadcastRGB
 # About
-The program (or driver, if you wish) allows changing the RGB colors of the
-microphone HyperX Quadcast S just like NGenuity does. Must support all
-Unix-like operating systems. The Linux and MacOS versions have been tested and
-work as expected. FreeBSD and other BSDs should work.
+The program (or driver, if you wish) allows setting the RGB lights of HyperX
+*Quadcast S and Duocast* just like NGenuity does. It is supposed to work on all
+Unix-like systems. The Linux and MacOS versions have been tested and work as
+expected.
 
 Available modes are *solid, blink, cycle, wave, lightning, and pulse*. The
-program runs as a daemon, kill it or unplug the mic to stop.
+program runs as a daemon (except the MacOS version), kill it, or unplug the mic
+to stop.
 
 ## Features:
 - *free & open source (GPL-2.0-only)*
@@ -15,11 +16,12 @@ program runs as a daemon, kill it or unplug the mic to stop.
 - *daemon*
 
 ## Things yet to be done:
+- *self-contained static compilation (without libusb)*
+- *the foreground option (-f and --foreground)*
+- *properly test FreeBSD*
 - *visualizer mode (i.e. VU meter)*
 - *save option*
 - *multiple mics support*
-- *self-contained static compilation (preferably without libusb)*
-- *properly test \*BSD systems*
 
 ## Examples:
 ```bash
@@ -45,7 +47,7 @@ yay -S quadcastrgb
 ### Build on your own
 ```bash
 mkdir quadcastrgb && cd quadcastrgb
-wget https://gitlab.com/Ors1mer/QuadcastRGB/-/raw/main/aur/PKGBUILD # PKGBUILD download
+wget https://gitlab.com/Ors1mer/QuadcastRGB/-/raw/main/aur/PKGBUILD
 makepkg -sri # build and install
 cd .. && rm -rf quadcastrgb # clean-up
 ```
@@ -163,10 +165,9 @@ install locations.
 # FAQ
 ## Problem 1: make failed
 Check the dependencies:  
- - gcc v12.2.0 OR clang v14.0.6 (most versions should do fine)
- - libusb-1.0 v1.0.26 or newer
- - glibc or any other standard C library
- - gcc-libs
+- gcc v12.2.0 OR clang v14.0.6 (most versions should do fine)
+- libusb-1.0 v1.0.26 or newer
+- glibc or any other standard C library
 
 ## Problem 2: command not found
 Check the $PATH and manpath. The program follows XDG specifications, so the
@@ -186,8 +187,9 @@ $ lsusb
 Bus 001 Device 007: ID 0951:171f Kingston Technology HyperX QuadCast S # this is what you're looking for
 Bus 001 Device 006: ID 0951:171d Kingston Technology HyperX QuadCast S
 ```
-It must be either 0951:171f, 03f0:0f8b, 03f0:028c, 03f0:048c, 03f0:068c (if
-it isn't, contact me, the author, I'll add support for your IDs). 
+It must be either 0951:171f, 03f0:0f8b, 03f0:028c, 03f0:048c, 03f0:068c,
+or 03f0:098c (if it isn't, contact me, the author, I'll add support for your
+IDs). 
 
 Let's proceed to the rule creation:
 ```bash
@@ -215,7 +217,15 @@ killall quadcastrgb
 
 ## Problem 5: "HyperX Quadcast S isn't connected" even though it is
 Chances are you have a new revision of the mic that has unsupported
-VendorID:ProductID. **The currently supported IDs are 0951:171f, 03f0:0f8b, 
-03f0:028c, 03f0:048c, and 03f0:068c**. If you have different IDs (check it with
-*lsusb*, for example), contact the author; I'll add the support very quickly.
+VendorID:ProductID.
 
+Currently supported IDs:
+- 0951:171f
+- 03f0:0f8b
+- 03f0:028c
+- 03f0:048c
+- 03f0:068c
+- 03f0:098c
+
+If you have different IDs (check it with *lsusb*, for example), contact the
+author; I'll add the support very quickly.
