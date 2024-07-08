@@ -55,29 +55,29 @@ cd .. && rm -rf quadcastrgb # clean-up
 ## Debian-based distro
 Simply download it and install:
 ```bash
-wget https://ors1mer.xyz/downloads/quadcastrgb-1.0.3-2-amd64.deb
-dpkg -i quadcastrgb-1.0.3-2-amd64.deb
+wget https://ors1mer.xyz/downloads/quadcastrgb-1.0.4-2-amd64.deb
+dpkg -i quadcastrgb-1.0.4-2-amd64.deb
 ```
 Alternatively, it is possible to make a deb package of your own:
 ```bash
 git clone https://gitlab.com/Ors1mer/QuadcastRGB.git
 cd QuadcastRGB
 make debpkg # build the package with dpkg
-dpkg -i deb/quadcastrgb-1.0.3-2-amd64.deb # install
+dpkg -i deb/quadcastrgb-1.0.4-2-amd64.deb # install
 ```
 
 ## RPM-based distro
 Everything is pretty much the same as for deb. Simply download and install:
 ```bash
-wget https://ors1mer.xyz/downloads/quadcastrgb-1.0.3-2.x86_64.rpm
-rpm -ivh quadcastrgb-1.0.3-2.x86_64.rpm
+wget https://ors1mer.xyz/downloads/quadcastrgb-1.0.4-2.x86_64.rpm
+rpm -ivh quadcastrgb-1.0.4-2.x86_64.rpm
 ```
 Or build the package from source:
 ```bash
 git clone https://gitlab.com/Ors1mer/QuadcastRGB.git
 cd QuadcastRGB
 make rpmpkg # build the package in ~/rpmbuild/
-rpm -ivh quadcastrgb-1.0.3-2.x86_64.rpm
+rpm -ivh quadcastrgb-1.0.4-2.x86_64.rpm
 ```
 
 ## MacOS
