@@ -1,5 +1,5 @@
 Name:           quadcastrgb
-Version:        1.0.3
+Version:        1.0.4
 Release:        2
 Summary:        set RGB mode for the microphone HyperX Quadcast S
 
@@ -33,6 +33,8 @@ make install BINDIR_INS=$RPM_BUILD_ROOT/%{_bindir} \
 
 
 %changelog
+* Mon Jul 08 2024 Ors1mer
+- Version 1.0.4: a new VID:PID
 * Sat Dec 02 2023 Ors1mer
 - Version 1.0.3: just a new VID:PID
 * Wed May 10 2023 Ors1mer
