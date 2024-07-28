@@ -1,13 +1,13 @@
-/* quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
+/* quadcastrgb - set RGB lights of HyperX Quadcast S and DuoCast
  * File rgbmodes.h
  * Assembles data packets from "colorschemes" structure.
  * parse_colorscheme returns pointer to the array of data packets.
  *
  * <----- License notice ----->
- * Copyright (C) 2022 Ors1mer
+ * Copyright (C) 2022, 2023, 2024 Ors1mer
  *
  * You may contact the author by email:
- * ors1mer_dev [[at]] proton.me
+ * ors1mer [[at]] ors1mer dot xyz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,10 @@
 #define DATA_PACKET_SIZE 64
 #define BYTE_STEP 4 /* used to skip some part of bytes in a packet */
 #define RGB_CODE 0x81
+
+/* Macros */
+#define DIV_CEIL(X, Y) (((X)/(Y)) + ((X)%(Y) != 0))
+#define SPEED_RANGE(MIN, MAX, SPD) MIN + (MAX - MIN)*(100-SPD)/100
 /* Blink random */
 #define MAX_SPD 101
 #define MAX_DLY 100
@@ -48,6 +52,16 @@
 #define RAND_DLY_SEG_MAX 51
 #define RAND_COL_SEG_MIN 5
 #define RAND_DLY_SEG_MIN 2
+/* Cycle */
+#define MIN_CYCL_TR 12
+#define MAX_CYCL_TR 128
+/* Lightning */
+#define MIN_LGHT_BL 1
+#define MAX_LGHT_BL 9
+#define MIN_LGHT_UP 3
+#define MAX_LGHT_UP 10
+#define MIN_LGHT_DOWN 21
+#define MAX_LGHT_DOWN 131
 
 /* Messages */
 #define NOSUPPORT_MSG _("The mode not supported yet.\n")
@@ -58,6 +72,6 @@ typedef byte_t datpack[DATA_PACKET_SIZE];
 
 /* Functions */
 datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt);
-short count_color_commands(datpack *data_arr, int pck_cnt, int colgroup);
+short count_color_commands(const datpack *data_arr, int pck_cnt, int colgroup);
 
 #endif

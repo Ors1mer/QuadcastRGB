@@ -1,11 +1,11 @@
-/* quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
+/* quadcastrgb - set RGB lights of HyperX Quadcast S and DuoCast
  * File argparser.c
  *
  * <----- License notice ----->
- * Copyright (C) 2022 Ors1mer
+ * Copyright (C) 2022, 2023, 2024 Ors1mer
  *
  * You may contact the author by email:
- * ors1mer_dev [[at]] proton.me
+ * ors1mer [[at]] ors1mer dot xyz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,8 @@
 
 /* Static declarations */
 static void set_arg(const char ***arg_pp, const char **argv_end,
-                    struct colschemes *cs, int *state, int *verbose);
+                    struct colschemes *cs, int *state, int *verbose,
+                    int *save);
 static void set_br_spd_dly(const char **arg_p, const char **argv_end,
                            int state, struct colschemes *cs);
 static void set_mode(const char ***arg_pp, const char **argv_end,
@@ -53,21 +54,23 @@ static int is_mode(const char *str);
         *u = *l = value; \
     } \
 
-WRITE_PARAM(int, write_int_param);
-WRITE_PARAM(const char *, write_str_param);
+WRITE_PARAM(int, write_int_param)
+WRITE_PARAM(const char *, write_str_param)
 
 /* Const arrays */
 const char *modes[MODES_CNT] = {
-    "solid", "blink", "cycle", "lightning", "wave"
+    "solid", "blink", "cycle", "wave", "lightning", "pulse", "visualizer"
 };
-const int rainbow[RAINBOW_CNT] = {
+static const int rainbow[RAINBOW_CNT] = {
     0xff0000, 0xff009e, 0xcd00ff,
     0x2b00ff, 0x0068ff, 0x00ffff,
-    0x00ff67, 0x32ff00, 0xceff00
+    0x00ff67, 0x32ff00, 0xceff00,
+    nocolor
 };
 
 /* Functions */
-struct colschemes *parse_arg(int argc, const char **argv, int *verbose)
+struct colschemes *parse_arg(int argc, const char **argv, int *verbose,
+                             int *save)
 {
     struct colschemes *cs = malloc(sizeof(*cs));
     const char **arg_p;
@@ -80,7 +83,7 @@ struct colschemes *parse_arg(int argc, const char **argv, int *verbose)
     cs->upper.mode = cs->lower.mode = NULL;
 
     for(arg_p = argv+1; arg_p < argv+argc; arg_p++)
-        set_arg(&arg_p, argv+argc-1, cs, &cs_state, verbose);
+        set_arg(&arg_p, argv+argc-1, cs, &cs_state, verbose, save);
 
     if(!(cs->upper.mode)) { /* any chosen group sets also the other */
         fprintf(stderr, NOMODE_MSG);
@@ -97,13 +100,15 @@ int strequ(const char *str1, const char *str2)
 
 /* Changes all given parameters except argv_end */
 static void set_arg(const char ***arg_pp, const char **argv_end,
-                    struct colschemes *cs, int *state, int *verbose)
+                    struct colschemes *cs, int *state, int *verbose, int *save)
 {
     if(strequ(**arg_pp, "-h") || strequ(**arg_pp, "--help")) {
         printf(HELP_MESSAGE);
         free(cs); exit(success);
     } else if(strequ(**arg_pp, "-v") || strequ(**arg_pp, "--verbose")) {
         *verbose = 1;
+    } else if(strequ(**arg_pp, "-w") || strequ(**arg_pp, "--save")) {
+        *save = 1;
     } else if(strequ(**arg_pp, "-a") || strequ(**arg_pp, "--all")) {
         *state = all;
     } else if(strequ(**arg_pp, "-u") || strequ(**arg_pp, "--upper")) {
@@ -177,6 +182,9 @@ static void set_mode(const char ***arg_pp, const char **argv_end,
     if(!(cs->upper.mode) || !(cs->lower.mode)) { /* write solid to the other */
         int swap = (state == upper) ? lower : upper; /* state != all */
         write_str_param(&(cs->upper.mode), &(cs->lower.mode), modes[0], swap);
+        write_int_param(cs->upper.colors, cs->lower.colors, black, swap);
+        write_int_param(cs->upper.colors+1, cs->lower.colors+1, nocolor,
+                        swap);
     }
 }
 
@@ -189,8 +197,13 @@ static void set_colors(const char ***arg_pp, const char **argv_end,
         int col_cnt = 0;
 
         do {
+            int hexnum;
             (*arg_pp)++;
-            int hexnum = (int)strtol(**arg_pp, NULL, 16);
+            if(***arg_pp == '#')
+                hexnum = (int)strtol(**arg_pp+1, NULL, 16);
+            else
+                hexnum = (int)strtol(**arg_pp, NULL, 16);
+
             write_int_param(&(cs->upper.colors[col_cnt]),
                             &(cs->lower.colors[col_cnt]), hexnum, state);
             col_cnt++;
@@ -204,7 +217,7 @@ static void set_colors(const char ***arg_pp, const char **argv_end,
 static void write_default_cols(struct colschemes *cs, int state)
 {
     const char *md = (state == upper) ? cs->upper.mode : cs->lower.mode;
-    if(strequ(md, modes[2]) || strequ(md, modes[4])) { /* cycle or wave */
+    if(strequ(md, modes[2]) || strequ(md, modes[3])) { /* cycle or wave */
         int i;
         for(i = 0; i < RAINBOW_CNT; i++) {
             write_int_param(&(cs->upper.colors[i]), &(cs->lower.colors[i]),
@@ -213,14 +226,17 @@ static void write_default_cols(struct colschemes *cs, int state)
     } else if(strequ(md, modes[1])) { /* blink */
         write_int_param(cs->upper.colors, cs->lower.colors,
                         nocolor, state);
-    } else { /* solid, lightning */
-        write_int_param(cs->upper.colors, cs->lower.colors,
-                        red, state);
+    } else { /* solid, lightning, pulse */
+        write_int_param(cs->upper.colors, cs->lower.colors, red, state);
+        write_int_param(cs->upper.colors+1, cs->lower.colors+1, nocolor,
+                        state);
     }
 }
 
 static int ishexnumber(const char *str)
 {
+    if(*str == '#') /* include the "#RRGGBB" notation */
+        str++;
     for(; *str; str++) {
         if(!(*str>='0' && *str<='9') && !(*str>='A' && *str<'G') &&
                                         !(*str>='a' && *str<'g')) {
@@ -232,5 +248,6 @@ static int ishexnumber(const char *str)
 
 static int is_color(const char **arg_p, const char **argv_end)
 {
-    return (arg_p <= argv_end && ishexnumber(*arg_p));
+    return (arg_p <= argv_end && (ishexnumber(*arg_p)));
 }
+

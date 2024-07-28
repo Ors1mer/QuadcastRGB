@@ -1,11 +1,11 @@
-/* quadcastrgb - change RGB mode for the microphone HyperX Quadcast S
+/* quadcastrgb - set RGB lights of HyperX Quadcast S and DuoCast
  * File main.c
  *
  * <----- License notice ----->
- * Copyright (C) 2022 Ors1mer
+ * Copyright (C) 2022, 2023, 2024 Ors1mer
  *
  * You may contact the author by email:
- * ors1mer_dev [[at]] proton.me
+ * ors1mer [[at]] ors1mer dot xyz
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,7 @@
 #include "modules/rgbmodes.h"
 #include "modules/devio.h"
 
-#define LOCALESETUP() \
-    setlocale(LC_CTYPE, ""); \
+#define LOCALESETUP() \ setlocale(LC_CTYPE, ""); \
     setlocale(LC_MESSAGES, ""); \
     bindtextdomain(TEXTDOMAIN, LOCALEBASEDIR); \
     textdomain(TEXTDOMAIN)
@@ -56,10 +55,10 @@ int main(int argc, const char **argv)
     struct colschemes *cs;
     datpack *data_arr;
     libusb_device_handle *handle;
-    int verbose = 0, data_packet_cnt;
-    LOCALESETUP();
+    int verbose = 0, save = 0, data_packet_cnt;
+    /*LOCALESETUP();*/
     /* Parse arguments */
-    cs = parse_arg(argc, argv, &verbose);
+    cs = parse_arg(argc, argv, &verbose, &save);
     VERBOSE_PRINT(verbose, VERBOSE1_ARG);
     /* Create data packets */
     VERBOSE_PRINT(verbose, VERBOSE2_COL);
@@ -70,8 +69,8 @@ int main(int argc, const char **argv)
     handle = open_micro(data_arr); /* data_arr for freeing memory */
     /* Send packets */
     VERBOSE_PRINT(verbose, VERBOSE4_PKT);
-    send_startup_packets(handle, data_arr, data_packet_cnt);
-    send_packets(handle, data_arr, data_packet_cnt);
+    send_packets(handle, data_arr, data_packet_cnt, verbose, save);
+    /* Free all memory */
     free(data_arr);
     LIBUSB_FREE_EVERYTHING();
     VERBOSE_PRINT(verbose, VERBOSE5_END);
