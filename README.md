@@ -229,3 +229,9 @@ Currently supported IDs:
 
 If you have different IDs (check it with *lsusb*, for example), contact the
 author; I'll add the support very quickly.
+
+When reporting the issue, provide the detailed output about Quadcast S devices
+if possible:
+```bash
+lsusb -vd 'VendorID:ProductID'
+```
