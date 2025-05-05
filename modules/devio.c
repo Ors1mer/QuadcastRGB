@@ -23,7 +23,66 @@
  * Also, you may visit the Free Software Foundation at
  * 51 Franklin Street, Fifth Floor Boston, MA 02110 USA. 
  */
+#include <unistd.h> /* for usleep */
+#include <fcntl.h> /* for daemonization */
+#include <signal.h> /* for signal handling */
+
+#include "locale_macros.h"
+
 #include "devio.h"
+
+/* Constants */
+
+/*
+#define DEV_PID_NA1     0x171f
+#define DEV_PID_EU1     0x0f8b
+#define DEV_PID_EU2     0x028c
+#define DEV_PID_EU3     0x048c
+#define DEV_PID_EU4     0x068c
+#define DEV_PID_DUOCAST 0x098c
+#define DEV_PID_QC2S    0x02b5
+*/
+
+#define DEV_EPOUT 0x00 /* control endpoint OUT */
+#define DEV_EPIN 0x80 /* control endpoint IN */
+/* Packet info */
+#define MAX_PCT_CNT 90
+#define PACKET_SIZE 64 /* bytes */
+
+#define HEADER_CODE 0x04
+#define DISPLAY_CODE 0xf2
+#define PACKET_CNT 0x01
+
+#define INTR_EP_IN 0x82
+#define INTR_LENGTH 8
+
+#define TIMEOUT 1000 /* one second per packet */
+#define BMREQUEST_TYPE_OUT 0x21
+#define BREQUEST_OUT 0x09
+#define BMREQUEST_TYPE_IN 0xa1
+#define BREQUEST_IN 0x01
+#define WVALUE 0x0300
+#define WINDEX 0x0000
+/* Messages */
+#define DEVLIST_ERR_MSG _("Couldn't get the list of USB devices.\n")
+#define NODEV_ERR_MSG _("HyperX Quadcast S isn't connected.\n")
+#define OPEN_ERR_MSG _("Couldn't open the microphone.\n")
+#define BUSY_ERR_MSG _("Another program is using the microphone already. " \
+                       "Stopping.\n")
+#define TRANSFER_ERR_MSG _("Couldn't transfer a packet! " \
+                           "The device might be busy.\n")
+#define FOOTER_ERR_MSG _("Footer packet error: %s\n")
+#define HEADER_ERR_MSG _("Header packet error: %s\n")
+#define SIZEPCK_ERR_MSG _("Size packet error: %s\n")
+#define DATAPCK_ERR_MSG _("Data packet error: %s\n")
+#define PID_MSG _("Started with pid %d\n")
+/* Error codes */
+enum {
+    libusberr = 2,
+    nodeverr,
+    devopenerr,
+    transfererr
+};
 
 /* For open_micro */
 #define FREE_AND_EXIT() \
@@ -47,10 +106,25 @@
         exit(transfererr); \
     }
 
+/* Vendor IDs */
+#define DEV_VID_KINGSTON      0x0951
+#define DEV_VID_HP            0x03f0
+/* Product IDs */
+const unsigned short product_ids_kingston[] = {
+    0x171f
+};
+const unsigned short product_ids_hp[] = {
+    0x0f8b,
+    0x028c,
+    0x048c,
+    0x068c,
+    0x098c  /* Duocast */
+};
+
 /* Microphone opening */
 static int claim_dev_interface(libusb_device_handle *handle);
 static libusb_device *dev_search(libusb_device **devs, ssize_t cnt);
-static int is_micro(libusb_device *dev);
+static int is_compatible_mic(libusb_device *dev);
 /* Packet transfer */
 static short send_display_command(byte_t *packet,
                                   libusb_device_handle *handle);
@@ -123,26 +197,38 @@ static libusb_device *dev_search(libusb_device **devs, ssize_t cnt)
 {
     libusb_device **dev;
     for(dev = devs; dev < devs+cnt; dev++) {
-        if(is_micro(*dev))
+        if(is_compatible_mic(*dev))
             return *dev;
     }
     return NULL;
 }
 
-static int is_micro(libusb_device *dev)
+static int is_compatible_mic(libusb_device *dev)
 {
-    struct libusb_device_descriptor descr; /* no freeing needed */
+    int i, arr_size;
+    const unsigned short *product_id_arr;
+    struct libusb_device_descriptor descr;
     libusb_get_device_descriptor(dev, &descr);
-    if(descr.idVendor == DEV_VID_NA && descr.idProduct == DEV_PID_NA) {
-        return 1;
-    } else if(descr.idVendor == DEV_VID_EU) {
-        if(descr.idProduct == DEV_PID_EU1 ||
-           descr.idProduct == DEV_PID_EU2 ||
-           descr.idProduct == DEV_PID_EU3 ||
-           descr.idProduct == DEV_PID_EU4 ||
-           descr.idProduct == DEV_PID_DUOCAST) {
+
+    if (descr.idVendor == DEV_VID_KINGSTON) {
+        product_id_arr = product_ids_kingston;
+        arr_size = sizeof(product_ids_kingston)/sizeof(*product_id_arr);
+    } else if (descr.idVendor == DEV_VID_HP) {
+        product_id_arr = product_ids_hp;
+        arr_size = sizeof(product_ids_hp)/sizeof(*product_id_arr);
+    } else {
+        return 0;
+    }
+
+    #ifdef DEBUG
+    printf("Valid vendor found: %04x\nTrying product ids:\n", descr.idVendor);
+    #endif
+    for (i = 0; i < arr_size; i++) {
+        #ifdef DEBUG
+        printf("\t%04x\n", product_id_arr[i]);
+        #endif
+        if (descr.idProduct == product_id_arr[i])
             return 1;
-        }
     }
     return 0;
 }
