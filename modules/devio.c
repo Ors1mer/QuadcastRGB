@@ -108,7 +108,8 @@ const unsigned short product_ids_hp[] = {
     0x028c,
     0x048c,
     0x068c,
-    0x098c  /* Duocast */
+    0x098c, /* Duocast */
+    0x02b5  /* Quadcast 2S */
 };
 
 /* Microphone opening */
