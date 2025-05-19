@@ -139,7 +139,7 @@ static void print_packet(byte_t *pck, char *str);
 
 /* Signal handling */
 volatile static sig_atomic_t nonstop = 0; /* BE CAREFUL: GLOBAL VARIABLE */
-static void nonstop_reset_handler()
+static void nonstop_reset_handler(int s)
 {
     /* No need in saving errno or setting the handler again
      * because the program just frees memory and exits */
