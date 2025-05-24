@@ -30,32 +30,23 @@ ifeq ($(OS),freebsd) # thus, gcc required on FreeBSD
 endif
 # END
 
-dev: main.c $(OBJMODULES)
-	$(CC) $(CFLAGS_DEV) $^ $(LIBS) -o $(DEVBINPATH)
-
 quadcastrgb: main.c $(OBJMODULES)
 	$(CC) $(CFLAGS_INS) $^ $(LIBS) -o $(BINPATH)
 
+dev: main.c $(OBJMODULES)
+	$(CC) $(CFLAGS_DEV) $^ $(LIBS) -o $(DEVBINPATH)
 
 # For directories
 %/:
 	mkdir -p $@
 # For modules
 %.o: %.c %.h
-ifeq (quadcastrgb, $(MAKECMDGOALS))
-	$(CC) $(CFLAGS_INS) -c $< -o $@
-else ifeq (install, $(MAKECMDGOALS))
-	$(CC) $(CFLAGS_INS) -c $< -o $@
-else ifeq (debpkg, $(MAKECMDGOALS))
-	$(CC) $(CFLAGS_INS) -c $< -o $@
-else ifeq (rpmpkg, $(MAKECMDGOALS))
-	$(CC) $(CFLAGS_INS) -c $< -o $@
-else
+ifeq (dev, $(MAKECMDGOALS))
 	$(CC) $(CFLAGS_DEV) -c $< -o $@
+else
+	$(CC) $(CFLAGS_INS) -c $< -o $@
 endif
 
-
-.PHONY:
 install: quadcastrgb $(BINDIR_INS) $(MANDIR_INS)
 	cp $(BINPATH) $(BINDIR_INS)
 	cp $(MANPATH).gz $(MANDIR_INS)
@@ -77,8 +68,6 @@ rpmpkg: main.c $(SRCMODULES) man/quadcastrgb.1.gz
 	tar -zcf $${HOME}/rpmbuild/SOURCES/quadcastrgb-${BINVER}.tgz .
 	rpmbuild --ba $${HOME}/rpmbuild/SPECS/quadcastrgb.spec
 
-
-
 ifneq (clean, $(MAKECMDGOALS))
 -include deps.mk
 endif
@@ -86,7 +75,6 @@ endif
 deps.mk: $(SRCMODULES)
 	$(CC) -MM $^ > $@
 
-.SILENT:
 tags:
 	ctags *.c $(SRCMODULES)
 
