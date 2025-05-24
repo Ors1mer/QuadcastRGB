@@ -33,16 +33,6 @@
 
 /* Constants */
 
-/*
-#define DEV_PID_NA1     0x171f
-#define DEV_PID_EU1     0x0f8b
-#define DEV_PID_EU2     0x028c
-#define DEV_PID_EU3     0x048c
-#define DEV_PID_EU4     0x068c
-#define DEV_PID_DUOCAST 0x098c
-#define DEV_PID_QC2S    0x02b5
-*/
-
 #define DEV_EPOUT 0x00 /* control endpoint OUT */
 #define DEV_EPIN 0x80 /* control endpoint IN */
 /* Packet info */
@@ -130,7 +120,7 @@ static short send_display_command(byte_t *packet,
                                   libusb_device_handle *handle);
 static void display_data_arr(libusb_device_handle *handle,
                              const byte_t *colcommand, const byte_t *end);
-#ifndef DEBUG
+#if !defined(DEBUG) && !defined(OS_MAC)
 static void daemonize(int verbose);
 #endif
 #ifdef DEBUG
@@ -240,7 +230,7 @@ void send_packets(libusb_device_handle *handle, const datpack *data_arr,
     #ifdef DEBUG
     puts("Entering display mode...");
     #endif
-    #ifndef DEBUG
+    #if !defined(DEBUG) && !defined(OS_MAC)
     daemonize(verbose);
     #endif
     command_cnt = count_color_commands(data_arr, pck_cnt, 0);
@@ -252,7 +242,7 @@ void send_packets(libusb_device_handle *handle, const datpack *data_arr,
         display_data_arr(handle, *data_arr, *data_arr+2*BYTE_STEP*command_cnt);
 }
 
-#ifndef DEBUG
+#if !defined(DEBUG) && !defined(OS_MAC)
 static void daemonize(int verbose)
 {
     int pid;

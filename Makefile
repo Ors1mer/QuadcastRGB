@@ -28,6 +28,10 @@ endif
 ifeq ($(OS),freebsd) # thus, gcc required on FreeBSD
 	CC = gcc # clang seems to be unable to find libusb & libintl
 endif
+ifeq ($(OS),macos) # pass this info to the source code to disable daemonization
+	CFLAGS_DEV += -D OS_MAC
+	CFLAGS_INS += -D OS_MAC
+endif
 # END
 
 quadcastrgb: main.c $(OBJMODULES)

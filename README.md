@@ -158,6 +158,7 @@ If you are lucky, this should be enough:
 ```bash
 make install # linux
 gmake install OS=freebsd # freebsd
+make install OS=macos # mac
 ```
 Specify *BINDIR_INS* and *MANDIR_INS* for *make* if you want to change the
 install locations.
