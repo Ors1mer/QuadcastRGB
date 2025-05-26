@@ -1,5 +1,5 @@
 OS = linux # should be overridden if necessary
-VERSION = 1.0.4
+VERSION = 1.0.5
 
 CFLAGS_DEV = -g -Wall -DVERSION="\"$(VERSION)"\" -D DEBUG
 CFLAGS_INS = -s -O2 -DVERSION="\"$(VERSION)"\"
@@ -56,19 +56,18 @@ install: quadcastrgb $(BINDIR_INS) $(MANDIR_INS)
 	cp $(MANPATH).gz $(MANDIR_INS)
 
 debpkg: quadcastrgb
-	mkdir deb/$(DEBNAME)
-	mkdir -p deb/$(DEBNAME)/DEBIAN \
-		 deb/$(DEBNAME)/usr/bin \
-		 deb/$(DEBNAME)/usr/share/man/man1
-	cp deb/control deb/$(DEBNAME)/DEBIAN/control
-	cp $(BINPATH) deb/$(DEBNAME)/usr/bin/quadcastrgb
-	cp $(MANPATH).gz deb/$(DEBNAME)/usr/share/man/man1
-	dpkg --build deb/$(DEBNAME)
+	mkdir -p packages/deb/$(DEBNAME)/DEBIAN \
+		 packages/deb/$(DEBNAME)/usr/bin \
+		 packages/deb/$(DEBNAME)/usr/share/man/man1
+	cp packages/deb/control packages/deb/$(DEBNAME)/DEBIAN/control
+	cp $(BINPATH) packages/deb/$(DEBNAME)/usr/bin/quadcastrgb
+	cp $(MANPATH).gz packages/deb/$(DEBNAME)/usr/share/man/man1
+	dpkg --build packages/deb/$(DEBNAME)
 
 rpmpkg: main.c $(SRCMODULES) man/quadcastrgb.1.gz
 	rpmdev-setuptree
 	cp -r main.c Makefile modules man $${HOME}/rpmbuild/BUILD/
-	cp rpm/quadcastrgb.spec $${HOME}/rpmbuild/SPECS/
+	cp packages/rpm/quadcastrgb.spec $${HOME}/rpmbuild/SPECS/
 	tar -zcf $${HOME}/rpmbuild/SOURCES/quadcastrgb-${VERSION}.tgz .
 	rpmbuild --ba $${HOME}/rpmbuild/SPECS/quadcastrgb.spec
 
