@@ -1,7 +1,8 @@
 OS = linux # should be overridden if necessary
+VERSION = 1.0.4
 
-CFLAGS_DEV = -g -Wall -D DEBUG
-CFLAGS_INS = -s -O2
+CFLAGS_DEV = -g -Wall -DVERSION="\"$(VERSION)"\" -D DEBUG
+CFLAGS_INS = -s -O2 -DVERSION="\"$(VERSION)"\"
 
 LIBS = -lusb-1.0
 
@@ -16,10 +17,9 @@ BINDIR_INS = $${HOME}/.local/bin/
 MANDIR_INS = $${HOME}/.local/share/man/man1/
 
 # Packaging
-BINVER = 1.0.4
 DEBPKGVER = 2
 DEBARCH = amd64
-DEBNAME = quadcastrgb-$(BINVER)-$(DEBPKGVER)-$(DEBARCH)
+DEBNAME = quadcastrgb-$(VERSION)-$(DEBPKGVER)-$(DEBARCH)
 
 # System-dependent part
 ifeq ($(OS),freebsd)
@@ -69,7 +69,7 @@ rpmpkg: main.c $(SRCMODULES) man/quadcastrgb.1.gz
 	rpmdev-setuptree
 	cp -r main.c Makefile modules man $${HOME}/rpmbuild/BUILD/
 	cp rpm/quadcastrgb.spec $${HOME}/rpmbuild/SPECS/
-	tar -zcf $${HOME}/rpmbuild/SOURCES/quadcastrgb-${BINVER}.tgz .
+	tar -zcf $${HOME}/rpmbuild/SOURCES/quadcastrgb-${VERSION}.tgz .
 	rpmbuild --ba $${HOME}/rpmbuild/SPECS/quadcastrgb.spec
 
 ifneq (clean, $(MAKECMDGOALS))

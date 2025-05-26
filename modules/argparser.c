@@ -100,8 +100,11 @@ int strequ(const char *str1, const char *str2)
 static void set_arg(const char ***arg_pp, const char **argv_end,
                     struct colschemes *cs, int *state, int *verbose)
 {
-    if(strequ(**arg_pp, "-h") || strequ(**arg_pp, "--help")) {
-        printf(HELP_MESSAGE);
+    if(strequ(**arg_pp, "--version")) {
+        puts(VERSION_MESSAGE);
+        free(cs); exit(success);
+    } else if(strequ(**arg_pp, "-h") || strequ(**arg_pp, "--help")) {
+        puts(HELP_MESSAGE);
         free(cs); exit(success);
     } else if(strequ(**arg_pp, "-v") || strequ(**arg_pp, "--verbose")) {
         *verbose = 1;

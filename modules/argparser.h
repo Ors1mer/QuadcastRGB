@@ -54,10 +54,14 @@ enum arg_exitcodes { success, argerr }; /* exitcodes */
 enum diode_group { all, upper, lower }; /* state values */
 
 /* Messages */
+#ifndef VERSION
+#define VERSION "unknown"
+#endif
+#define VERSION_MESSAGE "quadcastrgb version " VERSION
 #define HELP_MESSAGE _("Usage: quadcastrgb [-h] [-v] [-a|-u|-l] [-b bright] "\
                      "[-s speed] mode [COLORS]...\nAvailable modes: "\
                      "solid, blink, cycle, lightning, wave. Colors are hex "\
-                     "numbers.\nSee 'man quadcastrgb' for details.\n")
+                     "numbers.\nSee 'man quadcastrgb' for details.")
 #define BADARG_MSG   _("Unknown option: %s\n")
 #define NOPARAM_LONG_MSG _("%s: no parameter(s) specified\n")
 #define NOPARAM_SHORT_MSG _("%s: no parameter or it isn't a natural number\n")
