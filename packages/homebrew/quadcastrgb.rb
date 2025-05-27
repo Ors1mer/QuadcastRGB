@@ -2,7 +2,7 @@ class Quadcastrgb < Formula
   desc "Set RGB lights on HyperX QuadCast S and Duocast microphones"
   homepage "https://ors1mer.xyz/quadcastrgb.html"
   url "https://ors1mer.xyz/downloads/quadcastrgb-1.0.5.tgz"
-  sha256 "55efdf813f5264a9468d06910c5e730354d5544f10fc95e10a42e285df380e5b"
+  sha256 "cdbe8d638ac772579acca203bb2663d7c3a47006190a78ee2971b06c63c69648"
   license "GPL-2.0-only"
 
   depends_on "make" => :build
@@ -16,8 +16,8 @@ class Quadcastrgb < Formula
 
   test do
     assert_match "No mode specified (solid|blink|cycle|lightning|wave)", \
-                 shell_output("#{bin}/quadcastrgb 2>&1", 2)
+                 shell_output("#{bin}/quadcastrgb 2>&1", 1)
     assert_match "quadcastrgb version 1.0.5", \
-                 shell_output("#{bin}/quadcastrgb --version")
+                 shell_output("#{bin}/quadcastrgb --version", 0)
   end
 end
