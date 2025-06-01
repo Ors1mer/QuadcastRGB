@@ -45,11 +45,11 @@
     libusb_close(handle); \
     libusb_exit(NULL)
 
-#define VERBOSE1_ARG _("Arguments parsed successfully.")
-#define VERBOSE2_COL _("Assembling data packets.")
-#define VERBOSE3_MIC _("Opening the microphone descriptor.")
-#define VERBOSE4_PKT _("Sending packets.")
-#define VERBOSE5_END _("Done.")
+#define VERBOSE_ARG _("Arguments parsed successfully.")
+#define VERBOSE_MIC _("Opening the microphone descriptor.")
+#define VERBOSE_COL _("Assembling data packets.")
+#define VERBOSE_PKT _("Sending packets.")
+#define VERBOSE_END _("Done.")
 
 int main(int argc, const char **argv)
 {
@@ -57,23 +57,22 @@ int main(int argc, const char **argv)
     datpack *data_arr;
     libusb_device_handle *handle;
     int verbose = 0, data_packet_cnt;
-    /*LOCALESETUP();*/
     /* Parse arguments */
     cs = parse_arg(argc, argv, &verbose);
-    VERBOSE_PRINT(verbose, VERBOSE1_ARG);
+    VERBOSE_PRINT(verbose, VERBOSE_ARG);
+    /* Open the microphone */
+    VERBOSE_PRINT(verbose, VERBOSE_MIC);
+    handle = open_mic(&cs->pid);
     /* Create data packets */
-    VERBOSE_PRINT(verbose, VERBOSE2_COL);
+    VERBOSE_PRINT(verbose, VERBOSE_COL);
     data_arr = parse_colorscheme(cs, &data_packet_cnt);
     free(cs);
-    /* Open the microphone */
-    VERBOSE_PRINT(verbose, VERBOSE3_MIC);
-    handle = open_micro(data_arr); /* data_arr for freeing memory */
     /* Send packets */
-    VERBOSE_PRINT(verbose, VERBOSE4_PKT);
+    VERBOSE_PRINT(verbose, VERBOSE_PKT);
     send_packets(handle, data_arr, data_packet_cnt, verbose);
     /* Free all memory */
     free(data_arr);
     LIBUSB_FREE_EVERYTHING();
-    VERBOSE_PRINT(verbose, VERBOSE5_END);
+    VERBOSE_PRINT(verbose, VERBOSE_END);
     return 0;
 }

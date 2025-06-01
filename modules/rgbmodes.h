@@ -28,9 +28,6 @@
 #ifndef RGBMODES_SENTRY
 #define RGBMODES_SENTRY
 
-#include <stdio.h> /* for fprintf */
-#include <stdlib.h> /* for srand & rand */
-#include <time.h> /* for time */
 #include "argparser.h" /* for struct colschemes, strequ, enums */
 
 /* Constants */
@@ -64,7 +61,8 @@
 #define MAX_LGHT_DOWN 131
 
 /* Messages */
-#define NOSUPPORT_MSG _("The mode not supported yet.\n")
+#define NOSUPPORT_MSG _("The mode is not supported yet.\n")
+#define QS_2S_NOSUPPORT_MSG _("No support for %s on Quadcast 2S yet\n")
 
 /* Types */
 typedef unsigned char byte_t;

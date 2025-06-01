@@ -21,7 +21,7 @@
  * <https://www.gnu.org/licenses/gpl-2.0.en.html>. For any questions
  * concerning the license, you can write to <licensing@fsf.org>.
  * Also, you may visit the Free Software Foundation at
- * 51 Franklin Street, Fifth Floor Boston, MA 02110 USA. 
+ * 51 Franklin Street, Fifth Floor Boston, MA 02110 USA.
  */
 #include <unistd.h> /* for usleep */
 #include <fcntl.h> /* for daemonization */
@@ -74,10 +74,9 @@ enum {
     transfererr
 };
 
-/* For open_micro */
+/* For open_mic */
 #define FREE_AND_EXIT() \
     libusb_free_device_list(devs, 1); \
-    free(data_arr); \
     libusb_exit(NULL); \
     exit(libusberr)
 
@@ -108,14 +107,16 @@ const unsigned short product_ids_hp[] = {
     0x028c,
     0x048c,
     0x068c,
-    0x098c, /* Duocast */
-    0x02b5  /* Quadcast 2S */
+    0x098c,         /* Duocast */
+    QUADCAST_2S_ID  /* Quadcast 2S id is also needed for rgbmodes */
 };
 
 /* Microphone opening */
 static int claim_dev_interface(libusb_device_handle *handle);
 static libusb_device *dev_search(libusb_device **devs, ssize_t cnt);
 static int is_compatible_mic(libusb_device *dev);
+static void get_dev_vid_pid(libusb_device *dev, unsigned short *vid,
+                           unsigned short *pid);
 /* Packet transfer */
 static short send_display_command(byte_t *packet,
                                   libusb_device_handle *handle);
@@ -138,23 +139,24 @@ static void nonstop_reset_handler(int s)
 }
 
 /* Functions */
-libusb_device_handle *open_micro(datpack *data_arr)
+libusb_device_handle *open_mic(unsigned short *pid)
 {
     libusb_device **devs;
-    libusb_device *micro_dev = NULL;
+    libusb_device *mic_dev = NULL;
     libusb_device_handle *handle;
     ssize_t dev_count;
     short errcode;
     errcode = libusb_init(NULL);
     if(errcode) {
         perror("libusb_init");
-        free(data_arr); exit(libusberr);
+        exit(libusberr);
     }
     dev_count = libusb_get_device_list(NULL, &devs);
     HANDLE_ERR(dev_count < 0, DEVLIST_ERR_MSG);
-    micro_dev = dev_search(devs, dev_count);
-    HANDLE_ERR(!micro_dev, NODEV_ERR_MSG);
-    errcode = libusb_open(micro_dev, &handle);
+    mic_dev = dev_search(devs, dev_count);
+    HANDLE_ERR(!mic_dev, NODEV_ERR_MSG);
+    get_dev_vid_pid(mic_dev, NULL, pid);
+    errcode = libusb_open(mic_dev, &handle);
     if(errcode) {
         fprintf(stderr, "%s\n%s", libusb_strerror(errcode), OPEN_ERR_MSG);
         FREE_AND_EXIT();
@@ -198,13 +200,13 @@ static int is_compatible_mic(libusb_device *dev)
 {
     int i, arr_size;
     const unsigned short *product_id_arr;
-    struct libusb_device_descriptor descr;
-    libusb_get_device_descriptor(dev, &descr);
+    unsigned short vid, pid;
+    get_dev_vid_pid(dev, &vid, &pid);
 
-    if (descr.idVendor == DEV_VID_KINGSTON) {
+    if (vid == DEV_VID_KINGSTON) {
         product_id_arr = product_ids_kingston;
         arr_size = sizeof(product_ids_kingston)/sizeof(*product_id_arr);
-    } else if (descr.idVendor == DEV_VID_HP) {
+    } else if (vid == DEV_VID_HP) {
         product_id_arr = product_ids_hp;
         arr_size = sizeof(product_ids_hp)/sizeof(*product_id_arr);
     } else {
@@ -212,16 +214,28 @@ static int is_compatible_mic(libusb_device *dev)
     }
 
     #ifdef DEBUG
-    printf("Valid vendor found: %04x\nTrying product ids:\n", descr.idVendor);
+    printf("Valid vendor found: %04x\nTrying product ids:\n", vid);
     #endif
     for (i = 0; i < arr_size; i++) {
         #ifdef DEBUG
         printf("\t%04x\n", product_id_arr[i]);
         #endif
-        if (descr.idProduct == product_id_arr[i])
+        if (pid == product_id_arr[i])
             return 1;
     }
     return 0;
+}
+
+static void get_dev_vid_pid(libusb_device *dev, unsigned short *vid,
+                           unsigned short *pid)
+{
+    struct libusb_device_descriptor descr;
+    libusb_get_device_descriptor(dev, &descr);
+
+    if (vid)
+        *vid = descr.idVendor;
+    if (pid)
+        *pid = descr.idProduct;
 }
 
 void send_packets(libusb_device_handle *handle, const datpack *data_arr,

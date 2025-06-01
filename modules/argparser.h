@@ -80,6 +80,7 @@ struct colscheme {
 struct colschemes {
     struct colscheme upper; /* for the upper diode */
     struct colscheme lower; /* for the lower diodes */
+    unsigned short pid; /* the microphone's product id */
 };
 
 /* Functions */

@@ -32,8 +32,10 @@
 #include <libusb-1.0/libusb.h>
 #include "rgbmodes.h" /* for datpack & byte_t types, count_color_pairs, defs */
 
+#define QUADCAST_2S_ID 0x02b5 /* this one is required for rgbmodes */
+
 /* Functions */
-libusb_device_handle *open_micro(datpack *data_arr);
+libusb_device_handle *open_mic(unsigned short *pid);
 void send_packets(libusb_device_handle *handle, const datpack *data_arr,
                   int pck_cnt, int verbose);
 #endif

@@ -23,7 +23,15 @@
  * Also, you may visit the Free Software Foundation at
  * 51 Franklin Street, Fifth Floor Boston, MA 02110 USA. 
  */
+#include <stdio.h> /* for fprintf & fputs */
+#include <stdlib.h> /* for srand & rand */
+#include <time.h> /* for time */
+
+#include "devio.h" /* for QUADCAST_2S_PID */
+
 #include "rgbmodes.h"
+
+
 
 static int count_data(struct colscheme *colsch);
 static void fill_data(struct colscheme *colsch, byte_t *da, int pckcnt,
@@ -74,7 +82,10 @@ datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt)
     seq_upper = count_data(&cs->upper);
     seq_lower = count_data(&cs->lower);
     if(seq_upper < 1 || seq_lower < 1) {
-        fprintf(stderr, NOSUPPORT_MSG);
+        fputs(NOSUPPORT_MSG, stderr);
+        free(cs); exit(254);
+    } else if(cs->pid == QUADCAST_2S_ID) {
+        printf(QS_2S_NOSUPPORT_MSG, cs->upper.mode);
         free(cs); exit(254);
     }
 
