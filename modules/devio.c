@@ -36,6 +36,7 @@
 
 #define DEV_EPOUT 0x00 /* control endpoint OUT */
 #define DEV_EPIN 0x80 /* control endpoint IN */
+#define QS2S_ENDPOINT 0x06 /* interrupt endpoint OUT */
 /* Packet info */
 #define MAX_PCT_CNT 90
 #define PACKET_SIZE 64 /* bytes */
@@ -121,6 +122,8 @@ static void get_dev_vid_pid(libusb_device *dev, unsigned short *vid,
 /* Packet transfer */
 static short send_display_command(byte_t *packet,
                                   libusb_device_handle *handle);
+static short qs2s_send_display_command(byte_t *packet,
+                                                 libusb_device_handle *handle);
 static void display_data_arr(libusb_device_handle *handle,
                              const byte_t *colcommand, const byte_t *end);
 static void qs2s_display_data_arr(libusb_device_handle *handle,
@@ -335,18 +338,15 @@ static void qs2s_display_data_arr(libusb_device_handle *handle,
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     };
     header_packet[2] = pck_cnt;
-    #ifdef DEBUG
-    print_packet(header_packet, "QS2S header packet:");
-    #endif
-    sent = send_display_command(header_packet, handle);
+    sent = qs2s_send_display_command(header_packet, handle);
     if(sent != PACKET_SIZE)
         nonstop = 0;
 
     packet = calloc(PACKET_SIZE, 1);
     for(; pck < pck_cnt && nonstop; pck++) {
         memcpy(packet, data_arr + pck*DATA_PACKET_SIZE, DATA_PACKET_SIZE);
-        sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT,
-                   BREQUEST_OUT, WVALUE, WINDEX, packet, PACKET_SIZE, TIMEOUT);
+        sent = libusb_interrupt_transfer(handle, QS2S_ENDPOINT, packet,
+                                                   PACKET_SIZE, NULL, TIMEOUT);
         if(sent != PACKET_SIZE) {
             nonstop = 0; break;
         }
@@ -364,6 +364,20 @@ static short send_display_command(byte_t *packet, libusb_device_handle *handle)
     sent = libusb_control_transfer(handle, BMREQUEST_TYPE_OUT, BREQUEST_OUT,
                                  WVALUE, WINDEX, packet, PACKET_SIZE,
                                  TIMEOUT);
+    #ifdef DEBUG
+    print_packet(packet, "Header display:");
+    if(sent != PACKET_SIZE)
+        fprintf(stderr, HEADER_ERR_MSG, libusb_strerror(sent));
+    #endif
+    return sent;
+}
+
+static short qs2s_send_display_command(byte_t *packet,
+                                                  libusb_device_handle *handle)
+{
+    short sent;
+    sent = libusb_interrupt_transfer(handle, QS2S_ENDPOINT, packet,
+                                                   PACKET_SIZE, NULL, TIMEOUT);
     #ifdef DEBUG
     print_packet(packet, "Header display:");
     if(sent != PACKET_SIZE)
