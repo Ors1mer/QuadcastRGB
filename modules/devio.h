@@ -29,7 +29,7 @@
 #ifndef DEVIO_SENTRY
 #define DEVIO_SENTRY
 
-/* For Quadcast 2S protocol */
+/* Quadcast 2S protocol */
 #define QS2S_DISPLAY_CODE 0x44
 #define QS2S_PACKET_CNT_CODE 0x01
 #define QS2S_LED_CNT 108

@@ -33,10 +33,13 @@
 
 /* Constants */
 #define DISPLAY_MODE_SLEEP_TIME 55*1000 /* microsec */
+#define QS2S_DISPLAY_SLEEP_TIME 700 /* microsec */
 
 #define DEV_EPOUT 0x00 /* control endpoint OUT */
 #define DEV_EPIN 0x80 /* control endpoint IN */
-#define QS2S_ENDPOINT 0x06 /* interrupt endpoint OUT on Interface 1 */
+#define QS2S_EDP_OUT 0x06 /* interrupt endpoint OUT on Interface 1 */
+#define QS2S_EDP_IN 0x85 /* interrupt endpoint IN on Interface 1 */
+
 /* Packet info */
 #define MAX_PCT_CNT 90
 #define PACKET_SIZE 64 /* bytes */
@@ -47,6 +50,8 @@
 
 #define INTR_EP_IN 0x82
 #define INTR_LENGTH 8
+
+#define QS2S_RESPONSE_CODE 0xff
 
 #define TIMEOUT 1000 /* one second per packet */
 #define BMREQUEST_TYPE_OUT 0x21
@@ -67,6 +72,10 @@
 #define HEADER_ERR_MSG _("Header packet error: %s\n")
 #define SIZEPCK_ERR_MSG _("Size packet error: %s\n")
 #define DATAPCK_ERR_MSG _("Data packet error: %s\n")
+#define INTERRUPT_CMD_ERR_MSG _("USB Interrupt command error on " \
+                                                       "endpoint 0x%02x: %s\n")
+#define INTERRUPT_RSP_ERR_MSG _("USB Interrupt response error on " \
+                                                       "endpoint 0x%02x: %s\n")
 #define PID_MSG _("Started with pid %d\n")
 /* Error codes */
 enum {
@@ -110,7 +119,7 @@ const unsigned short product_ids_hp[] = {
     0x048c,
     0x068c,
     0x098c,         /* Duocast */
-    QUADCAST_2S_PID  /* Quadcast 2S id is also needed for rgbmodes */
+    QUADCAST_2S_PID /* Quadcast 2S */
 };
 
 /* Microphone opening */
@@ -128,6 +137,9 @@ static void display_data_arr(libusb_device_handle *handle,
                              const byte_t *colcommand, const byte_t *end);
 static void qs2s_display_data_arr(libusb_device_handle *handle,
                                           const byte_t *data_arr, int pck_cnt);
+static int send_interrupt_with_rsp(libusb_device_handle *handle, byte_t *pck,
+                                                        byte_t out, byte_t in);
+static int qs2s_rsp_check(const byte_t *cmd, const byte_t *rsp);
 #if !defined(DEBUG) && !defined(OS_MAC)
 static void daemonize(int verbose);
 #endif
@@ -257,7 +269,7 @@ void send_packets(libusb_device_handle *handle, const datpack *data_arr,
     signal(SIGINT, nonstop_reset_handler);
     signal(SIGTERM, nonstop_reset_handler);
 
-    /* The loop works until a signal handler resets the variable */
+    /* The loop runs until a signal handler resets the variable */
     nonstop = 1; /* set to 1 only here */
     if(pid == QUADCAST_2S_PID) {
         while(nonstop)
@@ -327,36 +339,6 @@ static void display_data_arr(libusb_device_handle *handle,
     free(packet);
 }
 
-static void qs2s_display_data_arr(libusb_device_handle *handle,
-                                           const byte_t *data_arr, int pck_cnt)
-{
-    int pck = 0, errcode;
-    byte_t *packet;
-    byte_t header_packet[PACKET_SIZE] = {
-        QS2S_DISPLAY_CODE, QS2S_PACKET_CNT_CODE, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-    header_packet[2] = pck_cnt;
-    errcode = qs2s_send_display_command(header_packet, handle);
-    if(errcode)
-        nonstop = 0;
-
-    packet = calloc(PACKET_SIZE, 1);
-    for(; pck < pck_cnt && nonstop; pck++) {
-        memcpy(packet, data_arr + pck*DATA_PACKET_SIZE, DATA_PACKET_SIZE);
-        errcode = libusb_interrupt_transfer(handle, QS2S_ENDPOINT, packet,
-                                            PACKET_SIZE, NULL,TIMEOUT);
-        if(errcode) {
-            nonstop = 0; break;
-        }
-        #ifdef DEBUG
-        print_packet(packet, "Data:");
-        #endif
-        usleep(DISPLAY_MODE_SLEEP_TIME);
-    }
-    free(packet);
-}
-
 static short send_display_command(byte_t *packet, libusb_device_handle *handle)
 {
     short sent;
@@ -371,19 +353,89 @@ static short send_display_command(byte_t *packet, libusb_device_handle *handle)
     return sent;
 }
 
+static void qs2s_display_data_arr(libusb_device_handle *handle,
+                                           const byte_t *data_arr, int pck_cnt)
+{
+    int pck = 0, errcode;
+    byte_t header_packet[PACKET_SIZE], packet[PACKET_SIZE];
+
+    memset(header_packet, 0, PACKET_SIZE);
+    header_packet[0] = QS2S_DISPLAY_CODE;
+    header_packet[1] = QS2S_PACKET_CNT_CODE;
+    header_packet[2] = pck_cnt;
+    errcode = qs2s_send_display_command(header_packet, handle);
+    usleep(QS2S_DISPLAY_SLEEP_TIME);
+
+    if(errcode)
+        nonstop = 0;
+    for(; pck < pck_cnt && nonstop; pck++) {
+        memcpy(packet, data_arr + pck*DATA_PACKET_SIZE, DATA_PACKET_SIZE);
+        errcode = send_interrupt_with_rsp(handle, packet, QS2S_EDP_OUT,
+                                                                  QS2S_EDP_IN);
+        if(errcode) {
+            nonstop = 0; break;
+        }
+        #ifdef DEBUG
+        print_packet(packet, "Data:");
+        #endif
+        usleep(QS2S_DISPLAY_SLEEP_TIME);
+    }
+}
+
 static int qs2s_send_display_command(byte_t *packet,
                                                   libusb_device_handle *handle)
 {
-    int errcode, transferred;
-
-    errcode = libusb_interrupt_transfer(handle, 0x07, packet, PACKET_SIZE,
-                                                        &transferred, TIMEOUT);
+    int errcode;
+    errcode = send_interrupt_with_rsp(handle, packet, QS2S_EDP_OUT,
+                                                                  QS2S_EDP_IN);
     #ifdef DEBUG
     print_packet(packet, "Header display:");
-    if(errcode || transferred != PACKET_SIZE)
-        fprintf(stderr, HEADER_ERR_MSG, libusb_strerror(errcode));
     #endif
     return errcode;
+}
+
+static int send_interrupt_with_rsp(libusb_device_handle *handle, byte_t *pck,
+                                                         byte_t out, byte_t in)
+{ /* use in QS2S protocol only */
+    int errcode, o_transferred, i_transferred;
+    byte_t rsp[PACKET_SIZE];
+
+    errcode = libusb_interrupt_transfer(handle, out, pck,
+                                         PACKET_SIZE, &o_transferred, TIMEOUT);
+    if(errcode) {
+        fprintf(stderr, INTERRUPT_CMD_ERR_MSG, out, libusb_strerror(errcode));
+        return errcode;
+    }
+    if(o_transferred != PACKET_SIZE) {
+        fprintf(stderr, "Short command transfer on EDP %x: %d/%d\n", out,
+                                                   o_transferred, PACKET_SIZE);
+    }
+    errcode = libusb_interrupt_transfer(handle, in, rsp,
+                                         PACKET_SIZE, &i_transferred, TIMEOUT);
+    if(errcode) {
+        fprintf(stderr, INTERRUPT_RSP_ERR_MSG, in, libusb_strerror(errcode));
+        return errcode;
+    }
+    if(i_transferred != PACKET_SIZE) {
+        fprintf(stderr, "Short response transfer on EDP %x: %d/%d\n", in,
+                                                   i_transferred, PACKET_SIZE);
+    }
+
+    return qs2s_rsp_check(pck, rsp);
+}
+
+static int qs2s_rsp_check(const byte_t *cmd, const byte_t *rsp)
+{
+    if (rsp[0] != QS2S_RESPONSE_CODE) {
+        fprintf(stderr, "Response code mismatch: %x instead of %x\n", rsp[0],
+                                                           QS2S_RESPONSE_CODE);
+        return 1;
+    } else if (rsp[14] != cmd[0]) {
+        fprintf(stderr, "Response command mismatch: %x instead of %x\n",
+                                                              rsp[14], cmd[0]);
+        return 2;
+    }
+    return 0;
 }
 
 #ifdef DEBUG
