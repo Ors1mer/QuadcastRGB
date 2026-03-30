@@ -272,8 +272,22 @@ void send_packets(libusb_device_handle *handle, const datpack *data_arr,
     /* The loop runs until a signal handler resets the variable */
     nonstop = 1; /* set to 1 only here */
     if(pid == QUADCAST_2S_PID) {
-        while(nonstop)
-            qs2s_display_data_arr(handle, *data_arr, pck_cnt);
+        if(pck_cnt > QS2S_SOLID_PKT_CNT) {
+            int num_frames = pck_cnt / QS2S_SOLID_PKT_CNT;
+            while(nonstop) {
+                int frame;
+                for(frame = 0; frame < num_frames && nonstop; frame++) {
+                    qs2s_display_data_arr(handle,
+                        *data_arr + frame * QS2S_SOLID_PKT_CNT
+                                         * DATA_PACKET_SIZE,
+                        QS2S_SOLID_PKT_CNT);
+                    usleep(QS2S_CYCLE_FRAME_DELAY);
+                }
+            }
+        } else {
+            while(nonstop)
+                qs2s_display_data_arr(handle, *data_arr, pck_cnt);
+        }
     } else {
         short command_cnt;
         command_cnt = count_color_commands(data_arr, pck_cnt, 0);

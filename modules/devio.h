@@ -34,6 +34,7 @@
 #define QS2S_PACKET_CNT_CODE 0x01
 #define QS2S_LED_CNT 108
 #define QS2S_SOLID_PKT_CNT 0x06
+#define QS2S_CYCLE_FRAME_DELAY 50000 /* microsec between animation frames */
 
 #include <libusb-1.0/libusb.h>
 #include "rgbmodes.h" /* for datpack & byte_t types, count_color_pairs, defs */
