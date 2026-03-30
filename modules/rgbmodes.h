@@ -23,7 +23,7 @@
  * <https://www.gnu.org/licenses/gpl-2.0.en.html>. For any questions
  * concerning the license, you can write to <licensing@fsf.org>.
  * Also, you may visit the Free Software Foundation at
- * 51 Franklin Street, Fifth Floor Boston, MA 02110 USA. 
+ * 51 Franklin Street, Fifth Floor Boston, MA 02110 USA.
  */
 #ifndef RGBMODES_SENTRY
 #define RGBMODES_SENTRY
@@ -42,6 +42,7 @@
 #define QS2S_RGB_PACKET_CODE 0x02
 #define QS2S_LED_CNT 108
 #define QS2S_CLRS_PER_PACKET 20
+#define QS2S_FRAME_PKT_CNT 6
 /* Macros */
 #define DIV_CEIL(X, Y) (((X)/(Y)) + ((X)%(Y) != 0))
 #define SPEED_RANGE(MIN, MAX, SPD) MIN + (MAX - MIN)*(100-SPD)/100
