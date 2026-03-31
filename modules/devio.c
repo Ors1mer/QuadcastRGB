@@ -140,6 +140,13 @@ static void qs2s_display_data_arr(libusb_device_handle *handle,
 static int send_interrupt_with_rsp(libusb_device_handle *handle, byte_t *pck,
                                                         byte_t out, byte_t in);
 static int qs2s_rsp_check(const byte_t *cmd, const byte_t *rsp);
+#ifdef OS_MAC
+static hid_device *hidapi_open_qs2s(void);
+static int hidapi_send_interrupt_with_rsp(hid_device *dev, byte_t *pck);
+static void hidapi_qs2s_display_data_arr(hid_device *dev,
+                                         const byte_t *data_arr, int pck_cnt);
+static int hidapi_qs2s_send_display_command(byte_t *packet, hid_device *dev);
+#endif
 #if !defined(DEBUG) && !defined(OS_MAC)
 static void daemonize(int verbose);
 #endif
@@ -157,13 +164,25 @@ static void nonstop_reset_handler(int s)
 }
 
 /* Functions */
-libusb_device_handle *open_mic(unsigned short *pid)
+struct mic_handle open_mic(unsigned short *pid)
 {
+    struct mic_handle mh;
     libusb_device **devs;
     libusb_device *mic_dev = NULL;
-    libusb_device_handle *handle;
     ssize_t dev_count;
     short errcode;
+    memset(&mh, 0, sizeof(mh));
+
+#ifdef OS_MAC
+    /* On macOS, try HIDAPI first for QS2S to avoid needing root */
+    mh.hid = hidapi_open_qs2s();
+    if(mh.hid) {
+        *pid = QUADCAST_2S_PID;
+        mh.is_hidapi = 1;
+        return mh;
+    }
+#endif
+
     errcode = libusb_init(NULL);
     if(errcode) {
         perror("libusb_init");
@@ -174,17 +193,17 @@ libusb_device_handle *open_mic(unsigned short *pid)
     mic_dev = dev_search(devs, dev_count);
     HANDLE_ERR(!mic_dev, NODEV_ERR_MSG);
     get_dev_vid_pid(mic_dev, NULL, pid);
-    errcode = libusb_open(mic_dev, &handle);
+    errcode = libusb_open(mic_dev, &mh.usb);
     if(errcode) {
         fprintf(stderr, "%s\n%s", libusb_strerror(errcode), OPEN_ERR_MSG);
         FREE_AND_EXIT();
     }
-    errcode = claim_dev_interface(handle);
+    errcode = claim_dev_interface(mh.usb);
     if(errcode) {
-        libusb_close(handle); FREE_AND_EXIT();
+        libusb_close(mh.usb); FREE_AND_EXIT();
     }
     libusb_free_device_list(devs, 1);
-    return handle;
+    return mh;
 }
 
 static int claim_dev_interface(libusb_device_handle *handle)
@@ -284,7 +303,7 @@ static void get_dev_vid_pid(libusb_device *dev, unsigned short *vid,
         *pid = descr.idProduct;
 }
 
-void send_packets(libusb_device_handle *handle, const datpack *data_arr,
+void send_packets(struct mic_handle *mh, const datpack *data_arr,
                   int pck_cnt, int verbose, int pid)
 {
     #ifdef DEBUG
@@ -300,27 +319,49 @@ void send_packets(libusb_device_handle *handle, const datpack *data_arr,
     /* The loop runs until a signal handler resets the variable */
     nonstop = 1; /* set to 1 only here */
     if(pid == QUADCAST_2S_PID) {
-        if(pck_cnt > QS2S_SOLID_PKT_CNT) {
-            int num_frames = pck_cnt / QS2S_SOLID_PKT_CNT;
-            while(nonstop) {
-                int frame;
-                for(frame = 0; frame < num_frames && nonstop; frame++) {
-                    qs2s_display_data_arr(handle,
-                        *data_arr + frame * QS2S_SOLID_PKT_CNT
-                                         * DATA_PACKET_SIZE,
-                        QS2S_SOLID_PKT_CNT);
-                    usleep(QS2S_CYCLE_FRAME_DELAY);
+#ifdef OS_MAC
+        if(mh->is_hidapi) {
+            if(pck_cnt > QS2S_SOLID_PKT_CNT) {
+                int num_frames = pck_cnt / QS2S_SOLID_PKT_CNT;
+                while(nonstop) {
+                    int frame;
+                    for(frame = 0; frame < num_frames && nonstop; frame++) {
+                        hidapi_qs2s_display_data_arr(mh->hid,
+                            *data_arr + frame * QS2S_SOLID_PKT_CNT
+                                             * DATA_PACKET_SIZE,
+                            QS2S_SOLID_PKT_CNT);
+                        usleep(QS2S_CYCLE_FRAME_DELAY);
+                    }
                 }
+            } else {
+                while(nonstop)
+                    hidapi_qs2s_display_data_arr(mh->hid, *data_arr, pck_cnt);
             }
-        } else {
-            while(nonstop)
-                qs2s_display_data_arr(handle, *data_arr, pck_cnt);
+        } else
+#endif
+        {
+            if(pck_cnt > QS2S_SOLID_PKT_CNT) {
+                int num_frames = pck_cnt / QS2S_SOLID_PKT_CNT;
+                while(nonstop) {
+                    int frame;
+                    for(frame = 0; frame < num_frames && nonstop; frame++) {
+                        qs2s_display_data_arr(mh->usb,
+                            *data_arr + frame * QS2S_SOLID_PKT_CNT
+                                             * DATA_PACKET_SIZE,
+                            QS2S_SOLID_PKT_CNT);
+                        usleep(QS2S_CYCLE_FRAME_DELAY);
+                    }
+                }
+            } else {
+                while(nonstop)
+                    qs2s_display_data_arr(mh->usb, *data_arr, pck_cnt);
+            }
         }
     } else {
         short command_cnt;
         command_cnt = count_color_commands(data_arr, pck_cnt, 0);
         while(nonstop)
-            display_data_arr(handle, *data_arr,
+            display_data_arr(mh->usb, *data_arr,
                                             *data_arr+2*BYTE_STEP*command_cnt);
     }
 }
@@ -478,6 +519,119 @@ static int qs2s_rsp_check(const byte_t *cmd, const byte_t *rsp)
         return 2;
     }
     return 0;
+}
+
+#ifdef OS_MAC
+static hid_device *hidapi_open_qs2s(void)
+{
+    struct hid_device_info *devs, *cur;
+    hid_device *dev = NULL;
+    unsigned short vids[] = { DEV_VID_HP, DEV_VID_KINGSTON };
+    int v;
+
+    hid_init();
+    hid_darwin_set_open_exclusive(0);
+
+    for(v = 0; v < 2 && !dev; v++) {
+        devs = hid_enumerate(vids[v], QUADCAST_2S_PID);
+        for(cur = devs; cur; cur = cur->next) {
+            if(cur->interface_number == 1) {
+                dev = hid_open_path(cur->path);
+                if(dev)
+                    break;
+            }
+        }
+        hid_free_enumeration(devs);
+    }
+
+    if(!dev)
+        hid_exit();
+    return dev;
+}
+
+static int hidapi_send_interrupt_with_rsp(hid_device *dev, byte_t *pck)
+{
+    byte_t buf[PACKET_SIZE + 1];
+    byte_t rsp[PACKET_SIZE];
+    int written, nread;
+
+    buf[0] = 0x00; /* report ID: 0 for non-numbered reports */
+    memcpy(buf + 1, pck, PACKET_SIZE);
+
+    written = hid_write(dev, buf, PACKET_SIZE + 1);
+    if(written < 0) {
+        fprintf(stderr, "HIDAPI write error: %ls\n", hid_error(dev));
+        return -1;
+    }
+
+    nread = hid_read_timeout(dev, rsp, PACKET_SIZE, TIMEOUT);
+    if(nread < 0) {
+        fprintf(stderr, "HIDAPI read error: %ls\n", hid_error(dev));
+        return -1;
+    }
+    if(nread == 0) {
+        fprintf(stderr, "HIDAPI read timeout\n");
+        return -1;
+    }
+    if(nread != PACKET_SIZE) {
+        fprintf(stderr, "Short HIDAPI response: %d/%d\n", nread, PACKET_SIZE);
+    }
+
+    return qs2s_rsp_check(pck, rsp);
+}
+
+static int hidapi_qs2s_send_display_command(byte_t *packet, hid_device *dev)
+{
+    int errcode;
+    errcode = hidapi_send_interrupt_with_rsp(dev, packet);
+    #ifdef DEBUG
+    print_packet(packet, "Header display (HIDAPI):");
+    #endif
+    return errcode;
+}
+
+static void hidapi_qs2s_display_data_arr(hid_device *dev,
+                                         const byte_t *data_arr, int pck_cnt)
+{
+    int pck = 0, errcode;
+    byte_t header_packet[PACKET_SIZE], packet[PACKET_SIZE];
+
+    memset(header_packet, 0, PACKET_SIZE);
+    header_packet[0] = QS2S_DISPLAY_CODE;
+    header_packet[1] = QS2S_PACKET_CNT_CODE;
+    header_packet[2] = pck_cnt;
+    errcode = hidapi_qs2s_send_display_command(header_packet, dev);
+    usleep(QS2S_DISPLAY_SLEEP_TIME);
+
+    if(errcode)
+        nonstop = 0;
+    for(; pck < pck_cnt && nonstop; pck++) {
+        memcpy(packet, data_arr + pck*DATA_PACKET_SIZE, DATA_PACKET_SIZE);
+        errcode = hidapi_send_interrupt_with_rsp(dev, packet);
+        if(errcode) {
+            nonstop = 0; break;
+        }
+        #ifdef DEBUG
+        print_packet(packet, "Data (HIDAPI):");
+        #endif
+        usleep(QS2S_DISPLAY_SLEEP_TIME);
+    }
+}
+#endif
+
+void close_mic(struct mic_handle *mh)
+{
+#ifdef OS_MAC
+    if(mh->is_hidapi) {
+        hid_close(mh->hid);
+        hid_exit();
+        return;
+    }
+#endif
+    libusb_release_interface(mh->usb, 0);
+    libusb_release_interface(mh->usb, 1);
+    libusb_close(mh->usb);
+    libusb_exit(NULL);
 }
 
 #ifdef DEBUG

@@ -6,6 +6,7 @@ class Quadcastrgb < Formula
   license "GPL-2.0-only"
 
   depends_on "make" => :build
+  depends_on "hidapi"
   depends_on "libusb"
 
   def install
