@@ -189,16 +189,44 @@ libusb_device_handle *open_mic(unsigned short *pid)
 
 static int claim_dev_interface(libusb_device_handle *handle)
 {
-    int errcode0, errcode1;
-    libusb_set_auto_detach_kernel_driver(handle, 1); /* might be unsupported */
-    errcode0 = libusb_claim_interface(handle, 0);
-    errcode1 = libusb_claim_interface(handle, 1);
-    if(errcode0 == LIBUSB_ERROR_BUSY || errcode1 == LIBUSB_ERROR_BUSY) {
-        fprintf(stderr, BUSY_ERR_MSG);
+    int errcode;
+#ifdef OS_MAC
+    /* macOS: auto_detach may silently fail inside libusb if the process
+     * lacks the com.apple.vm.device-access entitlement and isn't root.
+     * Manually detach kernel drivers and continue even if detach fails
+     * (claim may still succeed if the driver doesn't exclusively lock). */
+    int iface;
+    for (iface = 0; iface <= 1; iface++) {
+        if (libusb_kernel_driver_active(handle, iface) == 1) {
+            errcode = libusb_detach_kernel_driver(handle, iface);
+            if (errcode != LIBUSB_SUCCESS &&
+                                          errcode != LIBUSB_ERROR_NOT_FOUND) {
+                fprintf(stderr, "detach_kernel_driver(%d): %s\n",
+                        iface, libusb_strerror(errcode));
+            }
+        }
+    }
+#else
+    libusb_set_auto_detach_kernel_driver(handle, 1);
+#endif
+
+    errcode = libusb_set_configuration(handle, 1);
+    if (errcode != LIBUSB_SUCCESS && errcode != LIBUSB_ERROR_BUSY) {
+        fprintf(stderr, "set_configuration(1): %s\n",
+                                                    libusb_strerror(errcode));
+        /* Non-fatal: proceed to claim attempt */
+    }
+
+    errcode = libusb_claim_interface(handle, 0);
+    if (errcode != LIBUSB_SUCCESS) {
+        fprintf(stderr, "claim_interface(0): %s\n",
+                                                    libusb_strerror(errcode));
         return 1;
-    } else if(errcode0 == LIBUSB_ERROR_NO_DEVICE ||
-                                          errcode1 == LIBUSB_ERROR_NO_DEVICE) {
-        fprintf(stderr, OPEN_ERR_MSG);
+    }
+    errcode = libusb_claim_interface(handle, 1);
+    if (errcode != LIBUSB_SUCCESS) {
+        fprintf(stderr, "claim_interface(1): %s\n",
+                                                    libusb_strerror(errcode));
         return 1;
     }
     return 0;
