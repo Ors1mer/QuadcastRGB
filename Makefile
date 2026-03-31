@@ -31,6 +31,11 @@ endif
 ifeq ($(OS),macos) # pass this info to the source code to disable daemonization
 	CFLAGS_DEV += -D OS_MAC
 	CFLAGS_INS += -D OS_MAC
+	HIDAPI_CFLAGS := $(shell pkg-config --cflags hidapi 2>/dev/null)
+	HIDAPI_LIBS := $(shell pkg-config --libs hidapi 2>/dev/null)
+	CFLAGS_DEV += $(HIDAPI_CFLAGS)
+	CFLAGS_INS += $(HIDAPI_CFLAGS)
+	LIBS += $(HIDAPI_LIBS)
 endif
 # END
 

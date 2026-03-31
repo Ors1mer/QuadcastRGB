@@ -39,12 +39,6 @@
     if(V) \
         puts(MSG)
 
-#define LIBUSB_FREE_EVERYTHING() \
-    libusb_release_interface(handle, 0); \
-    libusb_release_interface(handle, 1); \
-    libusb_close(handle); \
-    libusb_exit(NULL)
-
 #define VERBOSE_ARG _("Arguments parsed successfully.")
 #define VERBOSE_MIC _("Opening the microphone descriptor.")
 #define VERBOSE_COL _("Assembling data packets.")
@@ -55,23 +49,23 @@ int main(int argc, const char **argv)
 {
     struct colschemes cs;
     datpack *data_arr;
-    libusb_device_handle *handle;
+    struct mic_handle mh;
     int verbose = 0, data_packet_cnt;
     /* Parse arguments */
     parse_arg(&cs, argc, argv, &verbose);
     VERBOSE_PRINT(verbose, VERBOSE_ARG);
     /* Open the microphone */
     VERBOSE_PRINT(verbose, VERBOSE_MIC);
-    handle = open_mic(&cs.pid);
+    mh = open_mic(&cs.pid);
     /* Create data packets */
     VERBOSE_PRINT(verbose, VERBOSE_COL);
     data_arr = parse_colorscheme(&cs, &data_packet_cnt);
     /* Send packets */
     VERBOSE_PRINT(verbose, VERBOSE_PKT);
-    send_packets(handle, data_arr, data_packet_cnt, verbose, cs.pid);
+    send_packets(&mh, data_arr, data_packet_cnt, verbose, cs.pid);
     /* Free all memory */
     free(data_arr);
-    LIBUSB_FREE_EVERYTHING();
+    close_mic(&mh);
     VERBOSE_PRINT(verbose, VERBOSE_END);
     return 0;
 }
