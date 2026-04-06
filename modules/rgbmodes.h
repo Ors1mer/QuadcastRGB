@@ -41,6 +41,7 @@
 /* For Quadcast 2S */
 #define QS2S_RGB_PACKET_CODE 0x02
 #define QS2S_LED_CNT 108
+#define QS2S_CLRS_PER_PACKET 20
 /* Macros */
 #define DIV_CEIL(X, Y) (((X)/(Y)) + ((X)%(Y) != 0))
 #define SPEED_RANGE(MIN, MAX, SPD) MIN + (MAX - MIN)*(100-SPD)/100
@@ -65,6 +66,10 @@
 /* Messages */
 #define NOSUPPORT_MSG _("The mode is not supported yet.")
 #define QS_2S_NOSUPPORT_MSG _("No support for %s on Quadcast 2S yet\n")
+#define QS2S_ONLY_MODE_MSG \
+                         _("The '%s' mode is only applicable to Quadcast 2S\n")
+#define QS2S_PARTIAL_GRADIENT_MSG \
+          _("Gradient cannot be applied to a single group for now (only both)")
 
 /* Types */
 typedef unsigned char byte_t;

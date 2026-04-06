@@ -36,10 +36,13 @@
 static void get_mode_sizes(struct colschemes *cs, int *seq_upper,
                                                                int *seq_lower);
 static int count_data(struct colscheme *colsch, int pid);
+static int count_s_data(struct colscheme *colsch);
 static int count_2s_data(const struct colscheme *colsch);
 static void fill_data(struct colscheme *colsch, byte_t *da, int pckcnt,
                                                                     int group);
-static void fill_qs2s_data(const struct colscheme *colsch, byte_t *da,
+static void fill_data_qs2s(struct colschemes *cs, byte_t *da,
+                                                                   int pckcnt);
+static void fill_group_data_qs2s(const struct colscheme *colsch, byte_t *da,
                                                         int pckcnt, int group);
 static void equalize(int upper_size, int lower_size, datpack *da);
 static void fillup_to(size_t copy_size, byte_t *curr, byte_t *finish);
@@ -64,6 +67,8 @@ static int get_gradient_length(const int *color, int spd);
 static void sequence_cycle(const int *color, int spd, byte_t *da);
 static void write_gradient(byte_t **da, int start_col, int end_col,
                                                                    int length);
+static void set_gradient_params(int start_col, int end_col, byte_t *rgb_st,
+                                            byte_t *rgb_end, byte_t *rgb_curr);
 /* Wave */
 static void sequence_wave(int *color, int spd, int group, byte_t *da);
 static void wave_array_shift(int *color);
@@ -72,6 +77,11 @@ static unsigned int count_lightning_data(struct colscheme *colsch);
 static void sequence_lightning(const int *color, int spd, int group,
                                                   int synchronous, byte_t *da);
 static int next_gradient_color(int color, int endcolor, unsigned int size);
+/* Gradient (Quadcast 2S) */
+static void fill_gradient_qs2s(const int *colors, int size, byte_t *da,
+                                                                   int pckcnt);
+static void write_gradient_qs2s(byte_t **da, int clr_num, int start_col,
+                                                      int end_col, int length);
 
 /* Shared */
 static void write_hexcolor(int color, byte_t *mem);
@@ -95,8 +105,7 @@ datpack *parse_colorscheme(struct colschemes *cs, int *pck_cnt)
     data_arr = calloc(sizeof(datpack), *pck_cnt);
 
     if(cs->pid == QUADCAST_2S_PID) {
-        fill_qs2s_data(&cs->upper, *data_arr, *pck_cnt, upper);
-        fill_qs2s_data(&cs->lower, *data_arr, *pck_cnt, lower);
+        fill_data_qs2s(cs, *data_arr, *pck_cnt);
     } else {
         fill_data(&cs->upper, *data_arr, *pck_cnt, upper);
         fill_data(&cs->lower, *data_arr+BYTE_STEP, *pck_cnt, lower);
@@ -145,6 +154,11 @@ static int count_data(struct colscheme *colsch, int pid)
     if(pid == QUADCAST_2S_PID) /* the protocol is different for this one */
         return count_2s_data(colsch);
 
+    return count_s_data(colsch);
+}
+
+static int count_s_data(struct colscheme *colsch)
+{ /* Quadcast/Duocast S versions */
     if(strequ(colsch->mode, "solid")) {
         return 1;
     } else if(strequ(colsch->mode, "blink")) {
@@ -154,13 +168,15 @@ static int count_data(struct colscheme *colsch, int pid)
     } else if(strequ(colsch->mode, "lightning") ||
               strequ(colsch->mode, "pulse")) {
         return count_lightning_data(colsch);
+    } else if (strequ(colsch->mode, "gradient")) {
+        fprintf(stderr, QS2S_ONLY_MODE_MSG, colsch->mode);
     }
     return -1;
 }
 
 static int count_2s_data(const struct colscheme *colsch)
-{
-    if(strequ(colsch->mode, "solid")) {
+{ /* Quadcast 2S */
+    if(strequ(colsch->mode, "solid") || strequ(colsch->mode, "gradient")) {
         /* 6 packets for theoretical 140 LEDs where 108 are actually used */
         return 6;
     }
@@ -241,22 +257,59 @@ static void fill_data(struct colscheme *colsch, byte_t *da, int pckcnt,
     }
 }
 
-static void fill_qs2s_data(const struct colscheme *colsch, byte_t *da,
-                                                         int pckcnt, int group)
+static void fill_data_qs2s(struct colschemes *cs, byte_t *da, int pckcnt)
 {
     int pcknum = 0;
-
     for(; pcknum < pckcnt; pcknum++) {
         da[pcknum*DATA_PACKET_SIZE] = QS2S_DISPLAY_CODE;
         da[pcknum*DATA_PACKET_SIZE+1] = QS2S_RGB_PACKET_CODE;
         da[pcknum*DATA_PACKET_SIZE+2] = pcknum;
     }
+    if(strequ(cs->upper.mode, "gradient") &&
+                                          strequ(cs->lower.mode, "gradient")) {
+        /* upper & lower groups are irrelevant for gradient */
+        int col_cnt;
+        col_cnt = colarr_len(cs->upper.colors);
+        if (col_cnt == 1) {
+            cs->upper.colors[1] = cs->upper.colors[0];
+            cs->upper.colors[2] = nocolor;
+            col_cnt = 2;
+        }
+        fill_gradient_qs2s(cs->upper.colors, colarr_len(cs->upper.colors), da,
+                                                                       pckcnt);
+    } else if(strequ(cs->upper.mode, "gradient") ||
+                                          strequ(cs->lower.mode, "gradient")) {
+        puts(QS2S_PARTIAL_GRADIENT_MSG);
+        exit(254);
+    } else { /* fill by group as usual */
+        fill_group_data_qs2s(&cs->upper, da, pckcnt, upper);
+        fill_group_data_qs2s(&cs->lower, da, pckcnt, lower);
+    }
+}
 
+static void fill_group_data_qs2s(const struct colscheme *colsch, byte_t *da,
+                                                         int pckcnt, int group)
+{
     if(strequ(colsch->mode, "solid"))
         sequence_solid_qs2s(colsch->colors, da, group);
 }
 
-static void set_brightness(int *color, int br) 
+static void fill_gradient_qs2s(const int *colors, int size, byte_t *da,
+                                                                    int pckcnt)
+{
+    int transition_length, i, curr_col = 0;
+    size -= 1; /* there is [colors_size - 1] transitions between colors */
+    transition_length = QS2S_LED_CNT / size;
+    for(i = 0; i < size; i++) {
+        if (i == size - 1)
+            transition_length += QS2S_LED_CNT % size;
+        write_gradient_qs2s(&da, curr_col, colors[i], colors[i+1],
+                                                            transition_length);
+        curr_col += transition_length;
+    }
+}
+
+static void set_brightness(int *color, int br)
 {
     for(; color && *color != nocolor; color++) {
         int i, shift;
@@ -332,7 +385,7 @@ static void sequence_blink_random(int speed, int delay, byte_t *da)
               (int)(speed * (RAND_COL_SEG_MAX-RAND_COL_SEG_MIN)) / MAX_SPD;
     dly_seg = RAND_DLY_SEG_MIN +
               (int)(delay * (RAND_DLY_SEG_MAX-RAND_DLY_SEG_MIN)) / MAX_DLY;
-     
+
     while(colpair < MAX_COLPAIR_COUNT) {
         colpair += col_seg + dly_seg;
         if(colpair > MAX_COLPAIR_COUNT) /* strip color segment if overflow */
@@ -391,13 +444,8 @@ static int get_gradient_length(const int *color, int spd)
 static void write_gradient(byte_t **da, int start_col, int end_col, int length)
 {
     byte_t rgb_st[3], rgb_end[3], rgb_curr[3];
-    int shift, i;
-    /* Fill the arrays */
-    for(shift = 16, i = 0; shift >= 0; shift -= 8, i++) {
-        rgb_st[i] = (byte_t)((start_col >> shift) & 0xff);
-        rgb_end[i] = (byte_t)((end_col >> shift) & 0xff);
-        rgb_curr[i] = rgb_st[i]; /* the start is going to be the 1st rgb */
-    }
+    int i;
+    set_gradient_params(start_col, end_col, rgb_st, rgb_end, rgb_curr);
     /* Write the transition to *da */
     for(i = 1; i <= length; i++, *da += BYTE_STEP) {
         int j;
@@ -409,6 +457,39 @@ static void write_gradient(byte_t **da, int start_col, int end_col, int length)
             rgb_curr[j] = (int)(rgb_st[j] +
                           ((float)(i)/(length - 1))*(rgb_end[j] - rgb_st[j]));
         }
+    }
+}
+
+static void write_gradient_qs2s(byte_t **da, int clr_num, int start_col,
+                                                       int end_col, int length)
+{
+    byte_t rgb_st[3], rgb_end[3], rgb_curr[3];
+    int i;
+    set_gradient_params(start_col, end_col, rgb_st, rgb_end, rgb_curr);
+    printf("Byte num = [%d]\n", clr_num);
+    for(i = 1; i <= length; i++) {
+        int j;
+        if (!((i - 1 + clr_num) % QS2S_CLRS_PER_PACKET)) {
+            *da += 4; /* skip the 4 bytes of a packet's header */
+            printf("Skipping header, i=%d\n", i);
+        }
+        for(j = 0; j < 3; j++, (*da)++) {
+            **da = rgb_curr[j]; /* write R, G, or B */
+            /* Alter the first RGB depending on the second and the length */
+            rgb_curr[j] = (int)(rgb_st[j] +
+                          ((float)(i)/(length - 1))*(rgb_end[j] - rgb_st[j]));
+        }
+    }
+}
+
+static void set_gradient_params(int start_col, int end_col, byte_t *rgb_st,
+                                             byte_t *rgb_end, byte_t *rgb_curr)
+{
+    int shift, i;
+    for(shift = 16, i = 0; shift >= 0; shift -= 8, i++) {
+        rgb_st[i] = (byte_t)((start_col >> shift) & 0xff);
+        rgb_end[i] = (byte_t)((end_col >> shift) & 0xff);
+        rgb_curr[i] = rgb_st[i]; /* the start is going to be the 1st rgb */
     }
 }
 
