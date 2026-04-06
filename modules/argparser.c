@@ -58,7 +58,8 @@ WRITE_PARAM(const char *, write_str_param)
 
 /* Const arrays */
 const char *modes[MODES_CNT] = {
-    "solid", "blink", "cycle", "wave", "lightning", "pulse", "visualizer"
+    "solid", "blink", "cycle", "wave",
+    "lightning", "pulse", "visualizer", "gradient"
 };
 static const int rainbow[RAINBOW_CNT] = {
     0xff0000, 0xff009e, 0xcd00ff,
