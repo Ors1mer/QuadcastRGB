@@ -181,6 +181,10 @@ struct mic_handle open_mic(unsigned short *pid)
         mh.is_hidapi = 1;
         return mh;
     }
+    #ifdef DEBUG
+    fprintf(stderr, "HIDAPI: could not open Quadcast 2S; "
+                    "falling back to libusb (may need root).\n");
+    #endif
 #endif
 
     errcode = libusb_init(NULL);
@@ -527,26 +531,81 @@ static hid_device *hidapi_open_qs2s(void)
     struct hid_device_info *devs, *cur;
     hid_device *dev = NULL;
     unsigned short vids[] = { DEV_VID_HP, DEV_VID_KINGSTON };
-    int v;
+    char dev_path[512] = {0};
+    int v, attempt;
 
     hid_init();
     hid_darwin_set_open_exclusive(0);
 
-    for(v = 0; v < 2 && !dev; v++) {
+    /* Find the vendor-specific HID collection and save its path */
+    for(v = 0; v < 2 && !dev_path[0]; v++) {
         devs = hid_enumerate(vids[v], QUADCAST_2S_PID);
         for(cur = devs; cur; cur = cur->next) {
-            if(cur->interface_number == 1) {
-                dev = hid_open_path(cur->path);
-                if(dev)
-                    break;
+            #ifdef DEBUG
+            printf("HIDAPI enum: vid=%04x pid=%04x iface=%d "
+                   "usage_page=0x%04x usage=0x%04x path=%s\n",
+                   cur->vendor_id, cur->product_id,
+                   cur->interface_number, cur->usage_page,
+                   cur->usage, cur->path);
+            #endif
+            if(cur->usage_page >= 0xFF00) {
+                snprintf(dev_path, sizeof(dev_path), "%s", cur->path);
+                break;
             }
         }
         hid_free_enumeration(devs);
     }
 
-    if(!dev)
+    if(!dev_path[0]) {
         hid_exit();
-    return dev;
+        return NULL;
+    }
+
+    /* The device may need time to reset after a previous session.
+     * Probe with a real QS2S command and close/reopen until
+     * the device actually responds. */
+    for(attempt = 0; attempt < 10; attempt++) {
+        byte_t probe_buf[PACKET_SIZE + 1] = {0};
+        byte_t rsp[PACKET_SIZE];
+        int written, nread;
+
+        dev = hid_open_path(dev_path);
+        if(!dev) {
+            #ifdef DEBUG
+            printf("HIDAPI: failed to open (attempt %d)\n", attempt + 1);
+            #endif
+            usleep(3000000);
+            continue;
+        }
+
+        /* Probe: QS2S display header with 0 data packets */
+        probe_buf[1] = QS2S_DISPLAY_CODE;
+        probe_buf[2] = QS2S_PACKET_CNT_CODE;
+
+        written = hid_write(dev, probe_buf, PACKET_SIZE + 1);
+        if(written >= 0) {
+            nread = hid_read_timeout(dev, rsp, PACKET_SIZE, TIMEOUT);
+            if(nread > 0) {
+                #ifdef DEBUG
+                printf("HIDAPI: device ready after %d attempt(s)\n",
+                       attempt + 1);
+                #endif
+                usleep(200000); /* let device settle */
+                return dev;
+            }
+        }
+
+        #ifdef DEBUG
+        printf("HIDAPI: device not ready (attempt %d)%s\n", attempt + 1,
+               written < 0 ? " [write failed]" : " [read timeout]");
+        #endif
+        hid_close(dev);
+        dev = NULL;
+        usleep(3000000);
+    }
+
+    hid_exit();
+    return NULL;
 }
 
 static int hidapi_send_interrupt_with_rsp(hid_device *dev, byte_t *pck)
@@ -560,17 +619,27 @@ static int hidapi_send_interrupt_with_rsp(hid_device *dev, byte_t *pck)
 
     written = hid_write(dev, buf, PACKET_SIZE + 1);
     if(written < 0) {
-        fprintf(stderr, "HIDAPI write error: %ls\n", hid_error(dev));
+        if(nonstop)
+            fprintf(stderr, "HIDAPI write error: %ls\n", hid_error(dev));
         return -1;
     }
 
     nread = hid_read_timeout(dev, rsp, PACKET_SIZE, TIMEOUT);
+    if(nread == 0) {
+        /* First command after warmup may still timeout; retry once */
+        usleep(200000);
+        written = hid_write(dev, buf, PACKET_SIZE + 1);
+        if(written >= 0)
+            nread = hid_read_timeout(dev, rsp, PACKET_SIZE, TIMEOUT);
+    }
     if(nread < 0) {
-        fprintf(stderr, "HIDAPI read error: %ls\n", hid_error(dev));
+        if(nonstop)
+            fprintf(stderr, "HIDAPI read error: %ls\n", hid_error(dev));
         return -1;
     }
     if(nread == 0) {
-        fprintf(stderr, "HIDAPI read timeout\n");
+        if(nonstop)
+            fprintf(stderr, "HIDAPI read timeout\n");
         return -1;
     }
     if(nread != PACKET_SIZE) {
