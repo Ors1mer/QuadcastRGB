@@ -537,7 +537,11 @@ static hid_device *hidapi_open_qs2s(void)
     hid_init();
     hid_darwin_set_open_exclusive(0);
 
-    /* Find the vendor-specific HID collection and save its path */
+    /* Find the HID collection on Interface 1 (Generic Desktop / Mouse)
+     * which contains the vendor-defined QS2S protocol with report IDs.
+     * macOS 26+ exposes each USB interface's HID collections as separate
+     * IOHIDDevices; the QS2S LED commands use report ID 0x44 which lives
+     * on Interface 1 (PrimaryUsagePage=1 / Mouse), not Interface 0. */
     for(v = 0; v < 2 && !dev_path[0]; v++) {
         devs = hid_enumerate(vids[v], QUADCAST_2S_PID);
         for(cur = devs; cur; cur = cur->next) {
@@ -548,7 +552,7 @@ static hid_device *hidapi_open_qs2s(void)
                    cur->interface_number, cur->usage_page,
                    cur->usage, cur->path);
             #endif
-            if(cur->usage_page >= 0xFF00) {
+            if(cur->usage_page == 0x0001 && cur->usage == 0x0002) {
                 snprintf(dev_path, sizeof(dev_path), "%s", cur->path);
                 break;
             }
@@ -578,11 +582,13 @@ static hid_device *hidapi_open_qs2s(void)
             continue;
         }
 
-        /* Probe: QS2S display header with 0 data packets */
-        probe_buf[1] = QS2S_DISPLAY_CODE;
-        probe_buf[2] = QS2S_PACKET_CNT_CODE;
+        /* Probe: QS2S display header with 0 data packets.
+         * pck[0] is the report ID (0x44 = QS2S_DISPLAY_CODE) which
+         * maps to the vendor-defined report on Interface 1. */
+        probe_buf[0] = QS2S_DISPLAY_CODE;
+        probe_buf[1] = QS2S_PACKET_CNT_CODE;
 
-        written = hid_write(dev, probe_buf, PACKET_SIZE + 1);
+        written = hid_write(dev, probe_buf, PACKET_SIZE);
         if(written >= 0) {
             nread = hid_read_timeout(dev, rsp, PACKET_SIZE, TIMEOUT);
             if(nread > 0) {
@@ -610,14 +616,17 @@ static hid_device *hidapi_open_qs2s(void)
 
 static int hidapi_send_interrupt_with_rsp(hid_device *dev, byte_t *pck)
 {
-    byte_t buf[PACKET_SIZE + 1];
+    byte_t buf[PACKET_SIZE];
     byte_t rsp[PACKET_SIZE];
     int written, nread;
 
-    buf[0] = 0x00; /* report ID: 0 for non-numbered reports */
-    memcpy(buf + 1, pck, PACKET_SIZE);
+    /* pck[0] is the report ID (e.g. 0x44 for QS2S display commands).
+     * Interface 1 uses numbered reports; the first byte of every QS2S
+     * packet is naturally the report ID on the wire. */
+    buf[0] = pck[0];
+    memcpy(buf + 1, pck + 1, PACKET_SIZE - 1);
 
-    written = hid_write(dev, buf, PACKET_SIZE + 1);
+    written = hid_write(dev, buf, PACKET_SIZE);
     if(written < 0) {
         if(nonstop)
             fprintf(stderr, "HIDAPI write error: %ls\n", hid_error(dev));
@@ -628,7 +637,7 @@ static int hidapi_send_interrupt_with_rsp(hid_device *dev, byte_t *pck)
     if(nread == 0) {
         /* First command after warmup may still timeout; retry once */
         usleep(200000);
-        written = hid_write(dev, buf, PACKET_SIZE + 1);
+        written = hid_write(dev, buf, PACKET_SIZE);
         if(written >= 0)
             nread = hid_read_timeout(dev, rsp, PACKET_SIZE, TIMEOUT);
     }
