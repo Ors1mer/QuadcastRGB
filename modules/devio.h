@@ -34,14 +34,28 @@
 #define QS2S_PACKET_CNT_CODE 0x01
 #define QS2S_LED_CNT 108
 #define QS2S_SOLID_PKT_CNT 0x06
+#define QS2S_CYCLE_FRAME_DELAY 50000 /* microsec between animation frames */
 
 #include <libusb-1.0/libusb.h>
+#ifdef OS_MAC
+#include <hidapi.h>
+#include <hidapi_darwin.h>
+#endif
 #include "rgbmodes.h" /* for datpack & byte_t types, count_color_pairs, defs */
 
 #define QUADCAST_2S_PID 0x02b5 /* for rgbmodes */
 
+struct mic_handle {
+    libusb_device_handle *usb;
+#ifdef OS_MAC
+    hid_device *hid;
+#endif
+    int is_hidapi;
+};
+
 /* Functions */
-libusb_device_handle *open_mic(unsigned short *pid);
-void send_packets(libusb_device_handle *handle, const datpack *data_arr,
-                  int pck_cnt, int verbose, int vid);
+struct mic_handle open_mic(unsigned short *pid);
+void send_packets(struct mic_handle *mh, const datpack *data_arr,
+                  int pck_cnt, int verbose, int pid);
+void close_mic(struct mic_handle *mh);
 #endif

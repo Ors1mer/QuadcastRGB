@@ -53,6 +53,9 @@ static void sequence_solid(const int *colors, byte_t *da);
 static void sequence_solid_qs2s(const int *colors, byte_t *da, int group);
 static void fill_qs2s_packets_with_color(byte_t *start, int clr, int offset,
                                                                       int cnt);
+/* Cycle (QS2S) */
+static void sequence_cycle_qs2s(const int *colors, int spd, byte_t *da,
+                                                                    int group);
 /* Blink */
 static unsigned int count_blink_data(struct colscheme *colsch);
 static void sequence_blink_random(int speed, int dly_seg, byte_t *da);
@@ -178,7 +181,12 @@ static int count_2s_data(const struct colscheme *colsch)
 { /* Quadcast 2S */
     if(strequ(colsch->mode, "solid") || strequ(colsch->mode, "gradient")) {
         /* 6 packets for theoretical 140 LEDs where 108 are actually used */
-        return 6;
+        return QS2S_FRAME_PKT_CNT;
+    } else if(strequ(colsch->mode, "cycle")) {
+        unsigned int gradient_len, num_colors;
+        gradient_len = SPEED_RANGE(MIN_CYCL_TR, MAX_CYCL_TR, colsch->spd);
+        num_colors = colarr_len(colsch->colors);
+        return gradient_len * num_colors * QS2S_FRAME_PKT_CNT;
     }
     return -1;
 }
@@ -263,7 +271,7 @@ static void fill_data_qs2s(struct colschemes *cs, byte_t *da, int pckcnt)
     for(; pcknum < pckcnt; pcknum++) {
         da[pcknum*DATA_PACKET_SIZE] = QS2S_DISPLAY_CODE;
         da[pcknum*DATA_PACKET_SIZE+1] = QS2S_RGB_PACKET_CODE;
-        da[pcknum*DATA_PACKET_SIZE+2] = pcknum;
+        da[pcknum*DATA_PACKET_SIZE+2] = pcknum % QS2S_FRAME_PKT_CNT;
     }
     if(strequ(cs->upper.mode, "gradient") &&
                                           strequ(cs->lower.mode, "gradient")) {
@@ -292,6 +300,8 @@ static void fill_group_data_qs2s(const struct colscheme *colsch, byte_t *da,
 {
     if(strequ(colsch->mode, "solid"))
         sequence_solid_qs2s(colsch->colors, da, group);
+    else if(strequ(colsch->mode, "cycle"))
+        sequence_cycle_qs2s(colsch->colors, colsch->spd, da, group);
 }
 
 static void fill_gradient_qs2s(const int *colors, int size, byte_t *da,
@@ -373,6 +383,59 @@ static void fill_qs2s_packets_with_color(byte_t *start, int clr, int offset,
     for(; i <= cnt; i++) {
         p = ((p+3 - start) % DATA_PACKET_SIZE == 0) ? p + 7 : p + 3 ;
         memcpy(p, start + 4 + 3*offset, 3);
+    }
+}
+
+static void sequence_cycle_qs2s(const int *colors, int spd, byte_t *da,
+                                                                    int group)
+{
+    const int *first_col = colors;
+    int tr_length, offset, led_cnt;
+    byte_t *frame;
+
+    tr_length = get_gradient_length(colors, spd);
+
+    if(group == upper) {
+        offset = 0;
+        led_cnt = QS2S_LED_CNT/2;
+    } else {
+        offset = 14;
+        led_cnt = QS2S_LED_CNT/2;
+    }
+
+    for(; *colors != nocolor; colors++) {
+        byte_t rgb_st[3], rgb_end[3];
+        int tr_start, tr_end, shift, i, j;
+
+        tr_start = *colors;
+        tr_end = (*(colors+1) == nocolor) ? *first_col : *(colors+1);
+
+        for(shift = 16, j = 0; shift >= 0; shift -= 8, j++) {
+            rgb_st[j] = (byte_t)((tr_start >> shift) & 0xff);
+            rgb_end[j] = (byte_t)((tr_end >> shift) & 0xff);
+        }
+
+        for(i = 0; i < tr_length; i++) {
+            int color;
+            byte_t r, g, b;
+
+            if(tr_length > 1) {
+                r = rgb_st[0] + (int)((float)i/(tr_length-1)
+                                                   * (rgb_end[0] - rgb_st[0]));
+                g = rgb_st[1] + (int)((float)i/(tr_length-1)
+                                                   * (rgb_end[1] - rgb_st[1]));
+                b = rgb_st[2] + (int)((float)i/(tr_length-1)
+                                                   * (rgb_end[2] - rgb_st[2]));
+            } else {
+                r = rgb_st[0]; g = rgb_st[1]; b = rgb_st[2];
+            }
+            color = (r << 16) | (g << 8) | b;
+
+            frame = da + (group == lower ? 2*DATA_PACKET_SIZE : 0);
+            fill_qs2s_packets_with_color(frame, color, offset, led_cnt);
+
+            da += QS2S_FRAME_PKT_CNT * DATA_PACKET_SIZE;
+        }
     }
 }
 
