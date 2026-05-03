@@ -1,13 +1,16 @@
 # QuadcastRGB
 # About
 The program (or driver, if you wish) allows setting the RGB lights of HyperX
-*Quadcast S and Duocast* just like NGenuity does. It is supposed to work on all
-Unix-like systems. The Linux and MacOS versions have been tested and work as
-expected.
+*Quadcast S, Quadcast 2, Duocast, and Quadcast 2S* just like NGenuity does. It
+is supposed to work on all Unix-like systems. The Linux and MacOS versions have
+been tested and work as expected.
 
 Available modes are *solid, blink, cycle, wave, lightning, and pulse*. The
 program runs as a daemon (except the MacOS version), kill it, or unplug the mic
 to stop.
+
+For *Quadcast 2S* only solid mode is supported at the moment. And on
+*Quadcast 2* it is only possible to set the brightness, not the color.
 
 ## Features:
 - *free & open source (GPL-2.0-only)*
@@ -26,15 +29,20 @@ to stop.
 ## Examples:
 ```bash
 # Default solid color (#f20000, red) for the whole micro:
-quadcastrgb solid 
+quadcastrgb solid
+# Turn off RGB completely (by passing the black color #000000)
+quadcastrgb solid 0
+# Set brightness and keep the default color (#f20000)
+quadcastrgb solid -b 20
 # Random blinking colors:
 quadcastrgb blink
 # Default cycle (rainbow) mode for the whole micro:
-quadcastrgb -a cycle 
+quadcastrgb -a cycle
 # Purple color for the upper part and yellow for the lower:
-quadcastrgb -u solid 4c0099 -l solid ff6000 
-# Default cycle mode for the upper diode with 50% brightness and yellow lightning for the lower:
-quadcastrgb -u -b 50 cycle -l lightning ff6000 
+quadcastrgb -u solid 4c0099 -l solid ff6000
+# Default cycle mode for the upper diode with 50% brightness
+# and yellow lightning for the lower:
+quadcastrgb -u -b 50 cycle -l lightning ff6000
 ```
 
 # Install

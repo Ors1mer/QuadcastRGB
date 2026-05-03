@@ -119,6 +119,7 @@ const unsigned short product_ids_hp[] = {
     0x048c,
     0x068c,
     0x098c,         /* Duocast */
+    0x09af,         /* Quadcast 2 */
     QUADCAST_2S_PID /* Quadcast 2S */
 };
 
