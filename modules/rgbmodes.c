@@ -21,7 +21,7 @@
  * <https://www.gnu.org/licenses/gpl-2.0.en.html>. For any questions
  * concerning the license, you can write to <licensing@fsf.org>.
  * Also, you may visit the Free Software Foundation at
- * 51 Franklin Street, Fifth Floor Boston, MA 02110 USA. 
+ * 51 Franklin Street, Fifth Floor Boston, MA 02110 USA.
  */
 #include <stdio.h> /* for fprintf & fputs */
 #include <stdlib.h> /* for srand & rand */
@@ -355,24 +355,33 @@ static void sequence_solid(const int *colors, byte_t *da)
 
 static void sequence_solid_qs2s(const int *colors, byte_t *da, int group)
 {
-    if(group == upper)
-        fill_qs2s_packets_with_color(da, colors[0], 0, QS2S_LED_CNT/2);
-    else if(group == lower)
-        fill_qs2s_packets_with_color(da+2*DATA_PACKET_SIZE, colors[0], 14,
-                                                               QS2S_LED_CNT/2);
+    int i;
+    if(group == upper) { /* the latter part (5 LEDs) of each column */
+        for(i = QS2S_LED_CNT_LOW; i < QS2S_LED_CNT; i += QS2S_ROW_CNT)
+            fill_qs2s_packets_with_color(da, colors[0], i, QS2S_LED_CNT_UP);
+    } else if(group == lower) { /* first part (4 LEDs) of each column */
+        for(i = 0; i < QS2S_LED_CNT; i+= QS2S_ROW_CNT)
+            fill_qs2s_packets_with_color(da, colors[0], i, QS2S_LED_CNT_LOW);
+    }
 }
 
 static void fill_qs2s_packets_with_color(byte_t *start, int clr, int offset,
                                                                        int cnt)
 {
-    int i = 0;
-    byte_t *p = start + 4 + 3*offset; /* skip the codes part by adding 4 */
+    int i;
+    byte_t *st = start, *p;
+
+    /* mind the 4-byte packet headers */
+    st += 4 + 4*((int)(offset/QS2S_CLRS_PER_PACKET));
+    /* the number of colors to skip in bytes */
+    st += 3*offset;
+    p = st;
 
     write_hexcolor(clr, p);
 
-    for(; i <= cnt; i++) {
+    for(i = 1; i <= cnt - 1; i++) {
         p = ((p+3 - start) % DATA_PACKET_SIZE == 0) ? p + 7 : p + 3 ;
-        memcpy(p, start + 4 + 3*offset, 3);
+        memcpy(p, st, 3);
     }
 }
 
@@ -466,12 +475,10 @@ static void write_gradient_qs2s(byte_t **da, int clr_num, int start_col,
     byte_t rgb_st[3], rgb_end[3], rgb_curr[3];
     int i;
     set_gradient_params(start_col, end_col, rgb_st, rgb_end, rgb_curr);
-    printf("Byte num = [%d]\n", clr_num);
     for(i = 1; i <= length; i++) {
         int j;
         if (!((i - 1 + clr_num) % QS2S_CLRS_PER_PACKET)) {
             *da += 4; /* skip the 4 bytes of a packet's header */
-            printf("Skipping header, i=%d\n", i);
         }
         for(j = 0; j < 3; j++, (*da)++) {
             **da = rgb_curr[j]; /* write R, G, or B */

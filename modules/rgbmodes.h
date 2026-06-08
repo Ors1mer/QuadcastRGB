@@ -42,6 +42,10 @@
 #define QS2S_RGB_PACKET_CODE 0x02
 #define QS2S_LED_CNT 108
 #define QS2S_CLRS_PER_PACKET 20
+#define QS2S_COL_CNT 12 /* 12 columns with 9 LEDs on each */
+#define QS2S_ROW_CNT 9
+#define QS2S_LED_CNT_UP 5
+#define QS2S_LED_CNT_LOW 4
 /* Macros */
 #define DIV_CEIL(X, Y) (((X)/(Y)) + ((X)%(Y) != 0))
 #define SPEED_RANGE(MIN, MAX, SPD) MIN + (MAX - MIN)*(100-SPD)/100
