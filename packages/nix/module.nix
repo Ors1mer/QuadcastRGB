@@ -43,13 +43,14 @@ in
       serviceConfig = {
         Type = "forking";
         ExecStart = "${lib.getExe cfg.package} ${lib.escapeShellArgs cfg.arguments}";
-        # The program stops on its own whenever the microphone stops talking
-        # back — muting it is enough on some models, unplugging it always is —
-        # and it exits successfully doing so, hence Restart=always rather than
-        # on-failure. This doubles as the way the lights come back after the
-        # mic is replugged, since it forgets them when it loses power.
+        # The microphone resets its HID interfaces on events of its own — on a
+        # Quadcast 2S every mute does it, verified against the kernel log — and
+        # that pulls the claimed interface out from under the running program,
+        # which then stops. It exits successfully doing so, hence always rather
+        # than on-failure. This doubles as the way the lights come back after a
+        # replug, since the mic forgets them when it loses power.
         Restart = "always";
-        RestartSec = 5;
+        RestartSec = 2;
       };
 
       # No rate limiting: with no microphone attached the program exits at
