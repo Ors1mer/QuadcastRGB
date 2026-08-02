@@ -88,6 +88,25 @@ make rpmpkg # build the package in ~/rpmbuild/
 rpm -ivh quadcastrgb-1.0.4-2.x86_64.rpm
 ```
 
+## NixOS
+The repository is a flake. Add it as an input and enable the module:
+```nix
+inputs.quadcastrgb.url = "github:Ors1mer/QuadcastRGB";
+...
+imports = [ inputs.quadcastrgb.nixosModules.default ];
+services.quadcastrgb.enable = true;
+```
+The module installs the program *and* the udev rule, so there is no need to
+create the rule by hand or to add yourself to a group: the microphone becomes
+writable for whoever is logged in.
+
+Optionally, set the lights on every login (see the man page for the arguments):
+```nix
+services.quadcastrgb.arguments = [ "-b" "50" "solid" "4c0099" ];
+```
+The package on its own is `nix build github:Ors1mer/QuadcastRGB`, but then the
+rule has to be written manually as described below.
+
 ## MacOS
 ### Installation
 Download the binary executable for your processor architecture (Intel or ARM):

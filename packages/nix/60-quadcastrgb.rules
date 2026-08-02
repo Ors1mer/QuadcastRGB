@@ -1,0 +1,14 @@
+# The microphones quadcastrgb knows about, see product_ids_* in modules/devio.c.
+#
+# The uaccess tag gives the locally logged in user access to the device, so no
+# group has to be created and no rights have to be granted by hand. The file
+# name has to sort before systemd's 73-seat-late.rules, which is the rule that
+# turns the tag into an actual permission.
+SUBSYSTEM=="usb", ATTR{idVendor}=="0951", ATTR{idProduct}=="171f", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="03f0", ATTR{idProduct}=="0f8b", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="03f0", ATTR{idProduct}=="028c", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="03f0", ATTR{idProduct}=="048c", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="03f0", ATTR{idProduct}=="068c", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="03f0", ATTR{idProduct}=="098c", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="03f0", ATTR{idProduct}=="09af", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="03f0", ATTR{idProduct}=="02b5", TAG+="uaccess"
