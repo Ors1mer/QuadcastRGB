@@ -52,6 +52,7 @@
 #define INTR_LENGTH 8
 
 #define QS2S_RESPONSE_CODE 0xff
+#define QS2S_DATA_RESPONSE_CODE 0x45 /* the display data reply on some mics */
 
 #define TIMEOUT 1000 /* one second per packet */
 #define BMREQUEST_TYPE_OUT 0x21
@@ -427,7 +428,14 @@ static int send_interrupt_with_rsp(libusb_device_handle *handle, byte_t *pck,
 
 static int qs2s_rsp_check(const byte_t *cmd, const byte_t *rsp)
 {
-    if (rsp[0] != QS2S_RESPONSE_CODE) {
+    if (rsp[0] == QS2S_DATA_RESPONSE_CODE) {
+        /* Such a reply carries no rsp[14], the command is echoed in rsp[1] */
+        if (rsp[1] != cmd[1]) {
+            fprintf(stderr, "Response command mismatch: %x instead of %x\n",
+                                                               rsp[1], cmd[1]);
+            return 2;
+        }
+    } else if (rsp[0] != QS2S_RESPONSE_CODE) {
         fprintf(stderr, "Response code mismatch: %x instead of %x\n", rsp[0],
                                                            QS2S_RESPONSE_CODE);
         return 1;
