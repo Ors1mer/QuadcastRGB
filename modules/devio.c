@@ -26,6 +26,7 @@
 #include <unistd.h> /* for usleep */
 #include <fcntl.h> /* for daemonization */
 #include <signal.h> /* for signal handling */
+#include <sys/wait.h> /* for waitpid */
 
 #include "locale_macros.h"
 
@@ -82,7 +83,8 @@ enum {
     libusberr = 2,
     nodeverr,
     devopenerr,
-    transfererr
+    transfererr,
+    daemonerr
 };
 
 /* For open_mic */
@@ -142,7 +144,9 @@ static int send_interrupt_with_rsp(libusb_device_handle *handle, byte_t *pck,
                                                         byte_t out, byte_t in);
 static int qs2s_rsp_check(const byte_t *cmd, const byte_t *rsp);
 #if !defined(DEBUG) && !defined(OS_MAC)
-static void daemonize(int verbose);
+static void daemonize();
+static void finish_daemonization(int verbose);
+static int ready_fd = -1; /* to tell the parent the mic is ready */
 #endif
 #ifdef DEBUG
 static void print_packet(byte_t *pck, char *str);
@@ -165,6 +169,9 @@ libusb_device_handle *open_mic(unsigned short *pid)
     libusb_device_handle *handle;
     ssize_t dev_count;
     short errcode;
+    #if !defined(DEBUG) && !defined(OS_MAC)
+    daemonize(); /* before libusb_init, not after! */
+    #endif
     errcode = libusb_init(NULL);
     if(errcode) {
         perror("libusb_init");
@@ -264,7 +271,7 @@ void send_packets(libusb_device_handle *handle, const datpack *data_arr,
     puts("Entering display mode...");
     #endif
     #if !defined(DEBUG) && !defined(OS_MAC)
-    daemonize(verbose);
+    finish_daemonization(verbose);
     #endif
 
     signal(SIGINT, nonstop_reset_handler);
@@ -285,19 +292,38 @@ void send_packets(libusb_device_handle *handle, const datpack *data_arr,
 }
 
 #if !defined(DEBUG) && !defined(OS_MAC)
-static void daemonize(int verbose)
+/* Fork doesn't copy the thread libusb_init starts, so libusb_exit
+ * in the child waits for it forever and SIGTERM never finishes us */
+static void daemonize()
 {
-    int pid;
+    int pid, status, fds[2];
+    char ready;
 
     chdir("/");
+    fflush(stdout); /* or the child prints it twice */
+    if(pipe(fds) == -1) {
+        perror("pipe");
+        exit(daemonerr);
+    }
     pid = fork();
-    if(pid > 0)
-        exit(0);
+    if(pid == -1) {
+        perror("fork");
+        exit(daemonerr);
+    }
+    if(pid > 0) { /* stay until the child opens the mic or fails */
+        close(fds[1]);
+        if(read(fds[0], &ready, 1) == 1)
+            exit(0);
+        waitpid(pid, &status, 0);
+        exit(WIFEXITED(status) ? WEXITSTATUS(status) : daemonerr);
+    }
+    close(fds[0]);
+    ready_fd = fds[1];
     setsid();
-    pid = fork();
-    if(pid > 0)
-        exit(0);
+}
 
+static void finish_daemonization(int verbose)
+{
     if(verbose)
         printf(PID_MSG, getpid()); /* notify the user */
     fflush(stdout); /* force clear of the buffer */
@@ -307,6 +333,8 @@ static void daemonize(int verbose)
     open("/dev/null", O_RDONLY);
     open("/dev/null", O_WRONLY);
     open("/dev/null", O_WRONLY);
+    write(ready_fd, "", 1); /* parent can exit now */
+    close(ready_fd);
 }
 #endif
 
